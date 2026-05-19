@@ -2,20 +2,36 @@
 
 Game::Game() : window(sf::VideoMode(800, 600), ":)")
 {
-	player = make_unique<Player>();
+	currentState = std::make_unique<MenuState>(); // zaczynamy z menu
 }
 
 void Game::run()
 {
-	sf::Clock clock;
+	sf::Clock clock; // zegar przeliczający klatki
 
-	while (window.isOpen())
+	while (window.isOpen()) // główna pętla
 	{
 		sf::Time dt = clock.restart();
 
-		processEvents();
-		update(dt);
-		render();
+		processEvents(); // sprawdza wejście
+		update(dt); // przelicza fizyke
+		render(); // rysuje
+	}
+}
+
+void Game::handleStateChange(StateAction action)
+{
+	if (action == StateAction::Play)
+	{
+		currentState = std::make_unique<PlayState>();
+	}
+	else if (action == StateAction::Menu)
+	{
+		currentState = std::make_unique<MenuState>();
+	}
+	else if (action == StateAction::Exit)
+	{
+		window.close();
 	}
 }
 
@@ -26,22 +42,24 @@ void Game::processEvents()
 	while (window.pollEvent(event))
 	{
 		if (event.type == sf::Event::Closed)
-		{
 			window.close();
+		else
+		{
+			StateAction action = currentState->handleEvent(event); // przekazujemy zdarzenie do aktywnego stanu
+			handleStateChange(action); // sprawdzenie czy zażądano zmiany
 		}
-
-		player->handleEvent(event);
 	}
 }
 
 void Game::update(sf::Time dt)
 {
-	player->update(dt);
+	StateAction action = currentState->update(dt);
+	handleStateChange(action);
 }
 
 void Game::render()
 {
 	window.clear(sf::Color::Black);
-	player->render(window);
+	currentState->render(window);
 	window.display();
 }

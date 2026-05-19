@@ -1,16 +1,17 @@
 #pragma once
 
-#include "Entity.h"
+#include "State.h"
 
 class Game
 {
 private:
-	unique_ptr<Player> player;
-	sf::RenderWindow window;
+	sf::RenderWindow window; // główne okno
+	std::unique_ptr<State> currentState; // wskaźnik na aktualny stan gry
 
 	void processEvents();
 	void update(sf::Time dt);
 	void render();
+	void handleStateChange(StateAction action); // zmiana ekranów
 
 public:
 	Game();
