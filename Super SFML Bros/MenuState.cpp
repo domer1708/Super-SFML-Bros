@@ -2,7 +2,7 @@
 
 MenuState::MenuState()
 {
-    font.loadFromFile("C:\\Windows\\Fonts\\arial.ttf"); // ładuje czcionkę (do poprawy)
+    font.loadFromFile("pliki/arial.ttf"); // ładuje czcionkę
 
     title.setFont(font);                    // tytuł gry
     title.setString("SUPER SFML BROS");

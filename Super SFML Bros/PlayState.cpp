@@ -4,6 +4,11 @@ PlayState::PlayState()
 {
 	player = std::make_unique<Player>();
 	camera.setSize(800.f, 600.f);
+    
+    if (currentLevel.loadFromFile("pliki/level1.txt"))
+    {
+        player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
+    }
 }
 
 StateAction PlayState::handleEvent(sf::Event& event)
@@ -19,7 +24,7 @@ StateAction PlayState::handleEvent(sf::Event& event)
 
 StateAction PlayState::update(sf::Time dt)
 {
-    player->update(dt); // przelicza fizyke gracza
+    player->update(dt, currentLevel.getPlatforms()); // przelicza fizyke gracza
     camera.setCenter(player->getPosition()); // kamera na gracza
     return StateAction::Keep;
 }
@@ -27,5 +32,6 @@ StateAction PlayState::update(sf::Time dt)
 void PlayState::render(sf::RenderWindow& window)
 {
     window.setView(camera);
+    currentLevel.render(window);
     player->render(window);
 }

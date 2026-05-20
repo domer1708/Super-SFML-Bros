@@ -42,6 +42,7 @@ class PlayState : public State
 private:
 	std::unique_ptr<Player> player; // wskaźnik na gracza
 	sf::View camera; // kamera podążająca za graczem
+	Level currentLevel;
 
 public:
 	PlayState();
