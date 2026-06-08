@@ -33,6 +33,16 @@ private:
 	sf::RectangleShape characterBoxes[3];
 	sf::Text characterNames[3];
 	int selectedCharacterIndex;
+	struct Star 
+	{
+        sf::Vector2f position;
+        float speed;
+        float size;
+    };
+    std::vector<Star> stars;
+    void initStars(); // funkcja pomocnicza do tworzenia gwiazd
+    // -----------------------------
+
 
 public:
 	MenuState();

@@ -17,9 +17,9 @@ void Player::setPosition(float x, float y)
 
 void Player::handleEvent(sf::Event& event) // obsługa skoku
 {
-	if (event.type == sf::Event::KeyPressed)
+	if(event.type == sf::Event::KeyPressed)
 	{
-		if ((event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up) && !isJumping)
+		if((event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up) && !isJumping)
 		{
 			velocity.y = -600.f;
 			isJumping = true;
