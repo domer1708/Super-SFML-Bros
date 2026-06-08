@@ -35,5 +35,6 @@ public:
 	void takeDamage(int damage);
 	int getHp() const;        
 	bool isAlive() const;
-
+	sf::Vector2f getVelocity() const { return velocity; }
+	void bounce(); 
 };

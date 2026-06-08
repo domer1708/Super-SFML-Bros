@@ -8,6 +8,7 @@ private:
     sf::RectangleShape shape;
     float speed;
     int direction; // 1 = prawo, -1 = lewo
+    bool alive;
 
 public:
     Enemy(float startX, float startY);
@@ -15,4 +16,6 @@ public:
     void update(sf::Time dt, const std::vector<sf::RectangleShape>& platforms) override;
     void render(sf::RenderWindow& window) override;
     sf::FloatRect getGlobalBounds() const;
+    bool isAlive() const { return alive; }
+    void die() { alive = false; }
 };

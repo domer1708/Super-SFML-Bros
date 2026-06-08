@@ -68,6 +68,7 @@ private:
     sf::Text gameOverText;// napis "GAME OVER"
     sf::Text resetText;   // napis pod spodem "Wcisnij ESC, aby wrocic do menu"
     // ----------------------------------------------
+	sf::ConvexShape heartShape;
 
 public:
     PlayState(int characterIndex);

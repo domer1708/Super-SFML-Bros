@@ -143,3 +143,9 @@ bool Player::isAlive() const
 {
 	return hp > 0;
 }
+
+void Player::bounce()
+{
+	velocity.y = -600.f; // Wybija gracza z powrotem w powietrze
+	isJumping = true;
+}

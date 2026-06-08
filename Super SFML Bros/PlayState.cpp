@@ -1,6 +1,7 @@
 #include "State.h"
 #include "Enemy.h"
 #include "Elements.h"
+#include <algorithm>
 
 PlayState::PlayState(int characterIndex)
 {
@@ -46,6 +47,14 @@ PlayState::PlayState(int characterIndex)
     enemies.push_back(Enemy(600.f, 300.f));
     enemies.push_back(Enemy(900.f, 200.f));
     enemies.push_back(Enemy(1200.f, 400.f));
+
+    heartShape.setPointCount(6);
+    heartShape.setPoint(0, sf::Vector2f(20.f, 10.f));  // Górne wcięcie
+    heartShape.setPoint(1, sf::Vector2f(30.f, 0.f));   // Prawy łuk
+    heartShape.setPoint(2, sf::Vector2f(40.f, 12.f));  // Prawa krawędź
+    heartShape.setPoint(3, sf::Vector2f(20.f, 38.f));  // Dolny szpic
+    heartShape.setPoint(4, sf::Vector2f(0.f, 12.f));   // Lewa krawędź
+    heartShape.setPoint(5, sf::Vector2f(10.f, 0.f));   // Lewy łuk
 }
 
 StateAction PlayState::handleEvent(sf::Event& event)
@@ -69,31 +78,46 @@ StateAction PlayState::update(sf::Time dt)
     // Jeśli jest Game Over, zatrzymujemy całą fizykę gry
     if (isGameOver)
     {
-        // Ustawiamy napisy na środku aktualnego widoku kamery, żeby gracz je widział
-        sf::Vector2f camCenter = camera.getCenter();
-        
-        gameOverText.setPosition(camCenter.x - gameOverText.getGlobalBounds().width / 2.f, camCenter.y - 60.f);
-        resetText.setPosition(camCenter.x - resetText.getGlobalBounds().width / 2.f, camCenter.y + 20.f);
-        
         return StateAction::Keep;
     }
 
-    // 1. Aktualizacja gracza
-    player->update(dt, currentLevel.getPlatforms()); 
-    camera.setCenter(player->getPosition()); // kamera podąża za graczem
+    // 1. Aktualizacja gracza i kamery
+    player->update(dt, currentLevel.getPlatforms());
+    camera.setCenter(player->getPosition());
 
-    // 2. Aktualizacja wszystkich potworków + sprawdzanie kolizji z graczem
+
+    // ==========================================
+    // TUTAJ WKLEJASZ TEN NOWY KOD (ZASTĘPUJE STARE WROGI):
+    // ==========================================
     for (auto& enemy : enemies)
     {
+        if (!enemy.isAlive()) continue; // Ignoruj zabite potwory
+
         enemy.update(dt, currentLevel.getPlatforms());
 
-        // Sprawdzamy, czy gracz dotknął różowego kwadratu
+        // Sprawdzamy kolizję
         if (player->getGlobalBounds().intersects(enemy.getGlobalBounds()))
         {
-            isGameOver = true; // ŁUP! Przegrana
+            sf::FloatRect pBounds = player->getGlobalBounds();
+            sf::FloatRect eBounds = enemy.getGlobalBounds();
+
+            // CZY GRACZ SKOCZYŁ NA GŁOWĘ?
+            if (player->getVelocity().y > 0 && pBounds.top + pBounds.height < eBounds.top + eBounds.height / 2.f)
+            {
+                enemy.die();          // Zabijamy wroga
+                player->bounce();     // Gracz odskakuje do góry
+            }
+            else
+            {
+                player->takeDamage(1); // Uderzenie w bok = strata 1 życia
+            }
         }
     }
 
+    // SPRZĄTANIE: Usuwamy zabite potworki z wektora
+    enemies.erase(std::remove_if(enemies.begin(), enemies.end(), [](const Enemy& e) { return !e.isAlive(); }), enemies.end());
+
+    // 3. Gwiazdki i Pułapki (Zostawiasz to, co miałeś)
     for (auto& star : currentLevel.getStars())
     {
         if (!star.isCollected() && player->getGlobalBounds().intersects(star.getBounds()))
@@ -101,9 +125,8 @@ StateAction PlayState::update(sf::Time dt)
             star.collect();
         }
     }
-    currentLevel.removeCollectedStars(); // To usuwa zebrane gwiazdki z mapy
+    currentLevel.removeCollectedStars();
 
-    // 2. Pułapki
     for (const auto& trap : currentLevel.getTraps())
     {
         if (player->getGlobalBounds().intersects(trap.getBounds()))
@@ -112,10 +135,10 @@ StateAction PlayState::update(sf::Time dt)
         }
     }
 
+    // 4. Sprawdzanie śmierci gracza (strata wszystkich 3 żyć)
     if (!player->isAlive())
     {
-        std::cout << "Koniec gry! Wracasz do menu." << std::endl;
-        return StateAction::Menu; // Wyrzuca gracza do ekranu głównego
+        isGameOver = true;
     }
 
     return StateAction::Keep;
@@ -123,23 +146,52 @@ StateAction PlayState::update(sf::Time dt)
 
 void PlayState::render(sf::RenderWindow& window)
 {
+    // ==========================================
+    // KROK 1: RYSOWANIE ŚWIATA GRY (Kamera podąża za graczem)
+    // ==========================================
     window.setView(camera);
-    
-    // Rysujemy świat gry
-    currentLevel.render(window);
-    
-    // Rysujemy potworki
-    for (auto& enemy : enemies)
+
+    currentLevel.render(window); // Rysujemy mapę
+
+    for (auto& enemy : enemies)  // Rysujemy potworki
     {
         enemy.render(window);
     }
-    
-    // Rysujemy gracza
-    player->render(window);
 
-    // Jeśli przegraliśmy, nakładamy napisy na sam wierzch screena
+    player->render(window);      // Rysujemy gracza
+
+    // ==========================================
+    // KROK 2: RYSOWANIE INTERFEJSU (HUD - Ekran stoi w miejscu)
+    // ==========================================
+    window.setView(window.getDefaultView()); // Przełączamy na widok statyczny okna!
+
+    // Rysujemy 3 serduszka obok siebie
+    for (int i = 0; i < 3; i++)
+    {
+        // Wyliczamy pozycję dla każdego serca (odstęp co 50 pikseli w prawo)
+        heartShape.setPosition(20.f + (i * 50.f), 20.f);
+
+        // MAGIA: Jeśli indeks pętli jest mniejszy niż obecne życie gracza,
+        // serce jest czerwone. W przeciwnym wypadku staje się ciemnoszare (zgaszone)!
+        if (i < player->getHp())
+        {
+            heartShape.setFillColor(sf::Color::Red);
+        }
+        else
+        {
+            heartShape.setFillColor(sf::Color(60, 60, 60)); // Ciemnoszary
+        }
+
+        window.draw(heartShape);
+    }
+
+    // Jeśli przegraliśmy, nakładamy napisy Game Over na sam wierzch statycznego ekranu
     if (isGameOver)
     {
+        // Ponieważ widok jest teraz statyczny (800x600), możemy wyśrodkować napisy na sztywno
+        gameOverText.setPosition(400.f - gameOverText.getGlobalBounds().width / 2.f, 240.f);
+        resetText.setPosition(400.f - resetText.getGlobalBounds().width / 2.f, 320.f);
+
         window.draw(gameOverText);
         window.draw(resetText);
     }

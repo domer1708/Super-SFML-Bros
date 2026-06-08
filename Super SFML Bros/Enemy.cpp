@@ -9,6 +9,7 @@ Enemy::Enemy(float startX, float startY)
     shape.setFillColor(sf::Color::Magenta);  // Różowy kolor
     shape.setSize(sf::Vector2f(40.f, 40.f)); // Trochę mniejszy niż gracz (50x50)
     shape.setPosition(position);
+    alive = true;
 }
 
 void Enemy::update(sf::Time dt, const std::vector<sf::RectangleShape>& platforms)
