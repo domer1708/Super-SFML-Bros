@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Elements.h"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
@@ -13,6 +14,8 @@ class Level
 {
 private:
     std::vector<sf::RectangleShape> platforms;
+    std::vector<Star> stars;
+    std::vector<Trap> traps;
     sf::Vector2f playerSpawnPosition;      
     static constexpr float tile_size = 50.f;
 
@@ -23,4 +26,7 @@ public:
     const std::vector<sf::RectangleShape>& getPlatforms() const;
     sf::Vector2f getPlayerSpawn() const;
     void render(sf::RenderWindow& window);
+    std::vector<Star>& getStars();
+    const std::vector<Trap>& getTraps() const;
+    void removeCollectedStars();
 };

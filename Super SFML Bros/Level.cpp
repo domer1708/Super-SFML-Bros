@@ -32,6 +32,14 @@ bool Level::loadFromFile(const std::string& filename)
             {
                 playerSpawnPosition = sf::Vector2f(x * tile_size, y * tile_size);
             }
+            else if (tile == 'S')
+            {
+                stars.push_back(Star(x * tile_size, y * tile_size));
+            }
+            else if (tile == '^')
+            {
+                traps.push_back(Trap(x * tile_size, y * tile_size));
+            }
         }
         y++;
     }
@@ -55,4 +63,19 @@ void Level::render(sf::RenderWindow& window)
     {
         window.draw(i);
     }
+}
+
+std::vector<Star>& Level::getStars() 
+{ 
+    return stars; 
+}
+
+const std::vector<Trap>& Level::getTraps() const 
+{ 
+    return traps; 
+}
+
+void Level::removeCollectedStars()
+{
+    stars.erase(std::remove_if(stars.begin(), stars.end(), [](const Star& s) { return s.isCollected(); }), stars.end());
 }
