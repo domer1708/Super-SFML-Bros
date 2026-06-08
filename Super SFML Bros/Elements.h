@@ -6,7 +6,7 @@
 class Star
 {
 private:
-    sf::CircleShape shape;
+    sf::ConvexShape shape;
     bool collected; // Czy została zebrana?
 
 public:

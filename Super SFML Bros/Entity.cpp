@@ -1,9 +1,12 @@
 #include "Entity.h"
 
-Player::Player() // tworzymy gracza z jakimiś parametrami
+Player::Player()
 {
 	isJumping = false;
 	velocity = sf::Vector2f(0.f, 0.f);
+
+	hp = 3;                                 // Startujemy z 3 życiami
+	invincibilityTimer = sf::Time::Zero;    // Na start nie jesteśmy nieśmiertelni
 
 	shape.setFillColor(sf::Color::Red);
 	shape.setSize(sf::Vector2f(50.f, 50.f));
@@ -29,6 +32,22 @@ void Player::handleEvent(sf::Event& event) // obsługa skoku
 
 void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platforms)  // fizyka i ruch
 {
+	// --- SYSTEM NIEŚMIERTELNOŚCI I MIGANIA ---
+	if (invincibilityTimer > sf::Time::Zero)
+	{
+		invincibilityTimer -= dt; // Czas leci w dół
+
+		// Co 100 milisekund zmieniamy przezroczystość (miganie)
+		if (static_cast<int>(invincibilityTimer.asMilliseconds() / 100) % 2 == 0)
+			shape.setFillColor(sf::Color(255, 0, 0, 100)); // Półprzezroczysty
+		else
+			shape.setFillColor(sf::Color::Red); // Normalny
+	}
+	else
+	{
+		shape.setFillColor(sf::Color::Red); // Czas minął, upewnij się że kolor jest normalny
+	}
+
 	float playerSpeed = 300.f;
 	float gravity = 1000.f;
 	velocity.x = 0.f;
@@ -98,4 +117,29 @@ sf::Vector2f Player::getPosition() const
 void Player::setColor(sf::Color color)
 {
     shape.setFillColor(color);
+}
+
+void Player::takeDamage(int damage)
+{
+	// Otrzymujesz obrażenia TYLKO wtedy, gdy zegar nieśmiertelności spadł do zera
+	if (invincibilityTimer <= sf::Time::Zero)
+	{
+		hp -= damage;
+		invincibilityTimer = sf::seconds(1.5f); // Dajemy 1.5 sekundy ochrony!
+
+		velocity.y = -400.f; // Odrzut w górę od kolców
+		isJumping = true;
+
+		std::cout << "Aua! Zostalo zyc: " << hp << std::endl; // Wypisze w czarnej konsoli
+	}
+}
+
+int Player::getHp() const
+{
+	return hp;
+}
+
+bool Player::isAlive() const
+{
+	return hp > 0;
 }

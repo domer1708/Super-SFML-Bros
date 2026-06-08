@@ -1,5 +1,6 @@
 #include "State.h"
-#include "Enemy.h" // <-- PAMIĘTAJ: Musimy dołączyć nasz nowy plik!
+#include "Enemy.h"
+#include "Elements.h"
 
 PlayState::PlayState(int characterIndex)
 {
@@ -91,6 +92,30 @@ StateAction PlayState::update(sf::Time dt)
         {
             isGameOver = true; // ŁUP! Przegrana
         }
+    }
+
+    for (auto& star : currentLevel.getStars())
+    {
+        if (!star.isCollected() && player->getGlobalBounds().intersects(star.getBounds()))
+        {
+            star.collect();
+        }
+    }
+    currentLevel.removeCollectedStars(); // To usuwa zebrane gwiazdki z mapy
+
+    // 2. Pułapki
+    for (const auto& trap : currentLevel.getTraps())
+    {
+        if (player->getGlobalBounds().intersects(trap.getBounds()))
+        {
+            player->takeDamage(trap.getDamage());
+        }
+    }
+
+    if (!player->isAlive())
+    {
+        std::cout << "Koniec gry! Wracasz do menu." << std::endl;
+        return StateAction::Menu; // Wyrzuca gracza do ekranu głównego
     }
 
     return StateAction::Keep;

@@ -63,6 +63,14 @@ void Level::render(sf::RenderWindow& window)
     {
         window.draw(i);
     }
+    for (auto& trap : traps)
+    {
+        trap.render(window);
+    }
+    for (auto& star : stars)
+    {
+        star.render(window);
+    }
 }
 
 std::vector<Star>& Level::getStars() 

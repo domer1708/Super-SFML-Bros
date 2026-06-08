@@ -19,6 +19,8 @@ class Player : public Entity
 private:
 	sf::RectangleShape shape; // kształt gracza (do wymiany)
 	bool isJumping;
+	int hp;                      
+	sf::Time invincibilityTimer;
 
 public:
 	Player();
@@ -30,5 +32,8 @@ public:
 	sf::Vector2f getPosition() const;
 	void setPosition(float x, float y);
 	sf::FloatRect getGlobalBounds() const { return shape.getGlobalBounds(); }
+	void takeDamage(int damage);
+	int getHp() const;        
+	bool isAlive() const;
 
 };
