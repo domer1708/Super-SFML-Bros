@@ -29,5 +29,6 @@ public:
     void setColor(sf::Color color);
 	sf::Vector2f getPosition() const;
 	void setPosition(float x, float y);
-	
+	sf::FloatRect getGlobalBounds() const { return shape.getGlobalBounds(); }
+
 };
