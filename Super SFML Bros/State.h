@@ -29,6 +29,11 @@ private:
 	sf::Text menu[2]; // dwie opcje (graj, wyjdź)
 	int selectedItemIndex; // index zaznaczonej opcji
 
+	bool isChoosingCharacter;
+	sf::RectangleShape characterBoxes[2];
+	sf::Text characterNames[2];
+	int selectedCharacterIndex;
+
 public:
 	MenuState();
 
