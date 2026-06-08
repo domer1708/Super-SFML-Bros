@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Level.h"
+#include <SFML/Graphics.hpp>
+#include <vector>
 
 class Entity // klasa bazowa postaci 
 {
@@ -21,6 +22,7 @@ private:
 	bool isJumping;
 	int hp;                      
 	sf::Time invincibilityTimer;
+	sf::Color baseColor;
 
 public:
 	Player();
@@ -37,4 +39,5 @@ public:
 	bool isAlive() const;
 	sf::Vector2f getVelocity() const { return velocity; }
 	void bounce(); 
+	void setHp(int newHp) { hp = newHp; }
 };

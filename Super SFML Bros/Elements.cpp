@@ -79,3 +79,20 @@ int Trap::getDamage() const
 {
     return damage;
 }
+
+Portal::Portal(float x, float y)
+{
+    shape.setSize(sf::Vector2f(50.f, 100.f)); // Wyższy niż gracz, jak drzwi
+    shape.setFillColor(sf::Color::Cyan);      // Błękitny kolor portalu
+    shape.setPosition(x, y - 50.f);           // Podnosimy o 50px, by stał płasko na podłodze
+}
+
+void Portal::render(sf::RenderWindow& window)
+{
+    window.draw(shape);
+}
+
+sf::FloatRect Portal::getBounds() const
+{
+    return shape.getGlobalBounds();
+}

@@ -1,48 +1,48 @@
 #include "Game.h"
+#include <iostream>
 
-Game::Game() : window(sf::VideoMode(800, 600), ":)")
+Game::Game() : window(sf::VideoMode(800, 600), "Super SFML Bros")
 {
 	currentState = std::make_unique<MenuState>(); // zaczynamy z menu
 }
 
 void Game::run()
 {
-	sf::Clock clock; // zegar przeliczający klatki
+	sf::Clock clock;
 
-	while (window.isOpen()) // główna pętla
+	while (window.isOpen())
 	{
 		sf::Time dt = clock.restart();
 
-		processEvents(); // sprawdza wejście
-		update(dt); // przelicza fizyke
-		render(); // rysuje
+		processEvents();
+		update(dt);
+		render();
 	}
 }
 
 void Game::handleStateChange(StateAction action)
 {
 	if (action == StateAction::Play)
-    {
-        // Sprawdzamy, czy obecny stan to na pewno menu
-        MenuState* menu = dynamic_cast<MenuState*>(currentState.get());
-        int chosenCharacter = 0; // domyślnie Mario
-        
-        if (menu != nullptr)
-        {
-            chosenCharacter = menu->getSelectedCharacter(); // pobieramy wybór z menu
-        }
+	{
+		// 1. Wyciągamy informacje z Menu
+		MenuState* menu = dynamic_cast<MenuState*>(currentState.get());
+		int chosenCharacter = 0; // Domyślnie Mario (0)
 
-        // Tworzymy nową rozgrywkę, przekazując jej numer wybranej postaci!
-        currentState = std::make_unique<PlayState>(chosenCharacter);
-    }
-    else if (action == StateAction::Menu)
-    {
-        currentState = std::make_unique<MenuState>();
-    }
-    else if (action == StateAction::Exit)
-    {
-        window.close();
-    }
+		if (menu != nullptr)
+		{
+			chosenCharacter = menu->getSelectedCharacter();
+		}
+		// 2. Tworzymy PlayState i podajemy mu indeks z menu
+		currentState = std::make_unique<PlayState>(chosenCharacter);
+	}
+	else if (action == StateAction::Menu)
+	{
+		currentState = std::make_unique<MenuState>();
+	}
+	else if (action == StateAction::Exit)
+	{
+		window.close();
+	}
 }
 
 void Game::processEvents()
@@ -55,8 +55,8 @@ void Game::processEvents()
 			window.close();
 		else
 		{
-			StateAction action = currentState->handleEvent(event); // przekazujemy zdarzenie do aktywnego stanu
-			handleStateChange(action); // sprawdzenie czy zażądano zmiany
+			StateAction action = currentState->handleEvent(event);
+			handleStateChange(action);
 		}
 	}
 }

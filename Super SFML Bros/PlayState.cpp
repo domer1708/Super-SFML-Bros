@@ -2,197 +2,189 @@
 #include "Enemy.h"
 #include "Elements.h"
 #include <algorithm>
+#include <iostream>
+#include <fstream>
 
 PlayState::PlayState(int characterIndex)
 {
     player = std::make_unique<Player>();
     camera.setSize(800.f, 600.f);
-    
-    isGameOver = false;
 
-    // Ładujemy czcionkę do napisów końcowych
-    font.loadFromFile("pliki/arial.ttf"); 
-    
+    isGameOver = false;
+    isGameWon = false;
+    isPaused = false;
+    currentLevelNumber = 1;
+    currentCharacterIndex = characterIndex;
+
+    font.loadFromFile("pliki/arial.ttf");
+
     gameOverText.setFont(font);
     gameOverText.setString("GAME OVER");
     gameOverText.setCharacterSize(60);
     gameOverText.setFillColor(sf::Color::Red);
     gameOverText.setStyle(sf::Text::Bold);
 
+    gameWonText.setFont(font);
+    gameWonText.setString("WYGRALES GRE!");
+    gameWonText.setCharacterSize(60);
+    gameWonText.setFillColor(sf::Color::Yellow);
+    gameWonText.setStyle(sf::Text::Bold);
+
     resetText.setFont(font);
     resetText.setString("Wcisnij ESC, aby wrocic do menu");
     resetText.setCharacterSize(20);
     resetText.setFillColor(sf::Color::White);
 
-    // --- USTAWIANIE KOLORU POSTACI ---
-    if (characterIndex == 0) {
-        player->setColor(sf::Color::Red);   // Mario
-    }
-    else if (characterIndex == 1) {
-        player->setColor(sf::Color::Green); // Luigi
-    }
-    else if (characterIndex == 2) {
-        player->setColor(sf::Color::Blue);  // Toad
-    }
-    
-    // --- ŁADOWANIE POZIOMU ---
-    if (currentLevel.loadFromFile("pliki/level1.txt"))
-    {
-        player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
-    }
+    if (characterIndex == 0) player->setColor(sf::Color::Red);
+    else if (characterIndex == 1) player->setColor(sf::Color::Green);
+    else if (characterIndex == 2) player->setColor(sf::Color::Blue);
 
-    // --- TWORZENIE 4 POTWORKÓW W STAŁYCH MIEJSCACH ---
-    // (Podaję przykładowe pozycje X, Y - zmieńcie je pod Wasz układ platform!)
-    enemies.push_back(Enemy(300.f, 200.f));
-    enemies.push_back(Enemy(600.f, 300.f));
-    enemies.push_back(Enemy(900.f, 200.f));
-    enemies.push_back(Enemy(1200.f, 400.f));
+    currentLevel.loadFromFile("pliki/level1.txt");
+    player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
 
     heartShape.setPointCount(6);
-    heartShape.setPoint(0, sf::Vector2f(20.f, 10.f));  // Górne wcięcie
-    heartShape.setPoint(1, sf::Vector2f(30.f, 0.f));   // Prawy łuk
-    heartShape.setPoint(2, sf::Vector2f(40.f, 12.f));  // Prawa krawędź
-    heartShape.setPoint(3, sf::Vector2f(20.f, 38.f));  // Dolny szpic
-    heartShape.setPoint(4, sf::Vector2f(0.f, 12.f));   // Lewa krawędź
-    heartShape.setPoint(5, sf::Vector2f(10.f, 0.f));   // Lewy łuk
+    heartShape.setPoint(0, sf::Vector2f(20.f, 10.f));
+    heartShape.setPoint(1, sf::Vector2f(30.f, 0.f));
+    heartShape.setPoint(2, sf::Vector2f(40.f, 12.f));
+    heartShape.setPoint(3, sf::Vector2f(20.f, 38.f));
+    heartShape.setPoint(4, sf::Vector2f(0.f, 12.f));
+    heartShape.setPoint(5, sf::Vector2f(10.f, 0.f));
+
+    pauseMenu = std::make_unique<PauseMenu>(font);
+}
+
+void PlayState::saveGame() {
+    std::ofstream file("pliki/zapis.txt");
+    if (file.is_open()) 
+    {
+        file << currentLevelNumber << "\n" << currentCharacterIndex << "\n" << player->getHp() << "\n"
+            << player->getPosition().x << "\n" << player->getPosition().y << "\n";
+        file.close();
+        pauseMenu->setItemText(1, "ZAPISANO!");
+    }
+}
+
+void PlayState::loadGame() {
+    // Zmieniamy ścieżkę na "pliki/zapis.txt"
+    std::ifstream file("pliki/zapis.txt");
+    if (file.is_open()) 
+    {
+        int lvl, charIdx, hp;
+        float px, py;
+        file >> lvl >> charIdx >> hp >> px >> py;
+        file.close();
+
+        currentLevelNumber = lvl;
+        currentCharacterIndex = charIdx;
+        player->setHp(hp);
+
+        // Przywracanie koloru
+        if (charIdx == 0) player->setColor(sf::Color::Red);
+        else if (charIdx == 1) player->setColor(sf::Color::Green);
+        else if (charIdx == 2) player->setColor(sf::Color::Blue);
+
+        // Ładowanie poziomu
+        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt");
+        player->setPosition(px, py);
+        isPaused = false;
+    }
+    else 
+    {
+        pauseMenu->setItemText(2, "BRAK ZAPISU!");
+    }
 }
 
 StateAction PlayState::handleEvent(sf::Event& event)
 {
-    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
-    {
-        return StateAction::Menu; // ESC zawsze wraca do menu
+    if (event.type == sf::Event::KeyPressed) {
+        if (event.key.code == sf::Keyboard::Escape) {
+            if (!isGameOver && !isGameWon) isPaused = !isPaused;
+            else return StateAction::Menu;
+        }
+
+        if (isPaused) {
+            pauseMenu->handleInput(event.key.code);
+            if (event.key.code == sf::Keyboard::Enter) {
+                int choice = pauseMenu->getSelectedIndex();
+                if (choice == 0) isPaused = false;
+                else if (choice == 1) saveGame();
+                else if (choice == 2) loadGame();
+                else if (choice == 3) return StateAction::Menu;
+            }
+            return StateAction::Keep;
+        }
     }
 
-    // Jeśli gra się skończyła, ignorujemy ruchy gracza
-    if (!isGameOver)
-    {
-        player->handleEvent(event);
-    }
-    
+    if (!isGameOver && !isGameWon && !isPaused) player->handleEvent(event);
     return StateAction::Keep;
 }
 
 StateAction PlayState::update(sf::Time dt)
 {
-    // Jeśli jest Game Over, zatrzymujemy całą fizykę gry
-    if (isGameOver)
-    {
-        return StateAction::Keep;
-    }
+    if (isGameOver || isGameWon || isPaused) return StateAction::Keep;
 
-    // 1. Aktualizacja gracza i kamery
     player->update(dt, currentLevel.getPlatforms());
     camera.setCenter(player->getPosition());
 
-
-    // ==========================================
-    // TUTAJ WKLEJASZ TEN NOWY KOD (ZASTĘPUJE STARE WROGI):
-    // ==========================================
-    for (auto& enemy : enemies)
-    {
-        if (!enemy.isAlive()) continue; // Ignoruj zabite potwory
-
+    auto& levelEnemies = currentLevel.getEnemies();
+    for (auto& enemy : levelEnemies) {
+        if (!enemy.isAlive()) continue;
         enemy.update(dt, currentLevel.getPlatforms());
-
-        // Sprawdzamy kolizję
-        if (player->getGlobalBounds().intersects(enemy.getGlobalBounds()))
-        {
-            sf::FloatRect pBounds = player->getGlobalBounds();
-            sf::FloatRect eBounds = enemy.getGlobalBounds();
-
-            // CZY GRACZ SKOCZYŁ NA GŁOWĘ?
-            if (player->getVelocity().y > 0 && pBounds.top + pBounds.height < eBounds.top + eBounds.height / 2.f)
-            {
-                enemy.die();          // Zabijamy wroga
-                player->bounce();     // Gracz odskakuje do góry
+        if (player->getGlobalBounds().intersects(enemy.getGlobalBounds())) {
+            if (player->getVelocity().y > 0 && player->getGlobalBounds().top + player->getGlobalBounds().height < enemy.getGlobalBounds().top + enemy.getGlobalBounds().height / 2.f) {
+                enemy.die();
+                player->bounce();
             }
-            else
-            {
-                player->takeDamage(1); // Uderzenie w bok = strata 1 życia
-            }
+            else player->takeDamage(1);
         }
     }
+    levelEnemies.erase(std::remove_if(levelEnemies.begin(), levelEnemies.end(), [](const Enemy& e) { return !e.isAlive(); }), levelEnemies.end());
 
-    // SPRZĄTANIE: Usuwamy zabite potworki z wektora
-    enemies.erase(std::remove_if(enemies.begin(), enemies.end(), [](const Enemy& e) { return !e.isAlive(); }), enemies.end());
-
-    // 3. Gwiazdki i Pułapki (Zostawiasz to, co miałeś)
-    for (auto& star : currentLevel.getStars())
-    {
-        if (!star.isCollected() && player->getGlobalBounds().intersects(star.getBounds()))
-        {
-            star.collect();
-        }
-    }
     currentLevel.removeCollectedStars();
-
+    for (auto& star : currentLevel.getStars())
+        if (!star.isCollected() && player->getGlobalBounds().intersects(star.getBounds())) star.collect();
     for (const auto& trap : currentLevel.getTraps())
-    {
-        if (player->getGlobalBounds().intersects(trap.getBounds()))
-        {
-            player->takeDamage(trap.getDamage());
+        if (player->getGlobalBounds().intersects(trap.getBounds())) player->takeDamage(trap.getDamage());
+
+    for (const auto& portal : currentLevel.getPortals()) {
+        if (player->getGlobalBounds().intersects(portal.getBounds())) {
+            currentLevelNumber++;
+            if (currentLevelNumber > 3) isGameWon = true;
+            else {
+                currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt");
+                player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
+            }
         }
     }
 
-    // 4. Sprawdzanie śmierci gracza (strata wszystkich 3 żyć)
-    if (!player->isAlive())
-    {
-        isGameOver = true;
-    }
-
+    if (!player->isAlive()) isGameOver = true;
     return StateAction::Keep;
 }
 
 void PlayState::render(sf::RenderWindow& window)
 {
-    // ==========================================
-    // KROK 1: RYSOWANIE ŚWIATA GRY (Kamera podąża za graczem)
-    // ==========================================
     window.setView(camera);
+    currentLevel.render(window);
+    for (auto& p : currentLevel.getPortals()) p.render(window);
+    for (auto& e : currentLevel.getEnemies()) e.render(window);
+    player->render(window);
 
-    currentLevel.render(window); // Rysujemy mapę
-
-    for (auto& enemy : enemies)  // Rysujemy potworki
-    {
-        enemy.render(window);
-    }
-
-    player->render(window);      // Rysujemy gracza
-
-    // ==========================================
-    // KROK 2: RYSOWANIE INTERFEJSU (HUD - Ekran stoi w miejscu)
-    // ==========================================
-    window.setView(window.getDefaultView()); // Przełączamy na widok statyczny okna!
-
-    // Rysujemy 3 serduszka obok siebie
-    for (int i = 0; i < 3; i++)
-    {
-        // Wyliczamy pozycję dla każdego serca (odstęp co 50 pikseli w prawo)
+    window.setView(window.getDefaultView());
+    for (int i = 0; i < 3; i++) {
         heartShape.setPosition(20.f + (i * 50.f), 20.f);
-
-        // MAGIA: Jeśli indeks pętli jest mniejszy niż obecne życie gracza,
-        // serce jest czerwone. W przeciwnym wypadku staje się ciemnoszare (zgaszone)!
-        if (i < player->getHp())
-        {
-            heartShape.setFillColor(sf::Color::Red);
-        }
-        else
-        {
-            heartShape.setFillColor(sf::Color(60, 60, 60)); // Ciemnoszary
-        }
-
+        heartShape.setFillColor(i < player->getHp() ? sf::Color::Red : sf::Color(60, 60, 60));
         window.draw(heartShape);
     }
 
-    // Jeśli przegraliśmy, nakładamy napisy Game Over na sam wierzch statycznego ekranu
-    if (isGameOver)
-    {
-        // Ponieważ widok jest teraz statyczny (800x600), możemy wyśrodkować napisy na sztywno
+    if (isPaused) pauseMenu->render(window);
+    if (isGameOver) {
         gameOverText.setPosition(400.f - gameOverText.getGlobalBounds().width / 2.f, 240.f);
         resetText.setPosition(400.f - resetText.getGlobalBounds().width / 2.f, 320.f);
-
-        window.draw(gameOverText);
-        window.draw(resetText);
+        window.draw(gameOverText); window.draw(resetText);
+    }
+    else if (isGameWon) {
+        gameWonText.setPosition(400.f - gameWonText.getGlobalBounds().width / 2.f, 240.f);
+        resetText.setPosition(400.f - resetText.getGlobalBounds().width / 2.f, 320.f);
+        window.draw(gameWonText); window.draw(resetText);
     }
 }

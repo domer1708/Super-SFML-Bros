@@ -1,14 +1,16 @@
 #include "Entity.h"
+#include <iostream>
 
 Player::Player()
 {
 	isJumping = false;
 	velocity = sf::Vector2f(0.f, 0.f);
 
-	hp = 3;                                 // Startujemy z 3 życiami
-	invincibilityTimer = sf::Time::Zero;    // Na start nie jesteśmy nieśmiertelni
+	hp = 3;
+	invincibilityTimer = sf::Time::Zero;
 
-	shape.setFillColor(sf::Color::Red);
+	baseColor = sf::Color::Red;      // Zapisujemy domyślny kolor na starcie
+	shape.setFillColor(baseColor);
 	shape.setSize(sf::Vector2f(50.f, 50.f));
 }
 
@@ -18,11 +20,11 @@ void Player::setPosition(float x, float y)
 	shape.setPosition(position);
 }
 
-void Player::handleEvent(sf::Event& event) // obsługa skoku
+void Player::handleEvent(sf::Event& event)
 {
-	if(event.type == sf::Event::KeyPressed)
+	if (event.type == sf::Event::KeyPressed)
 	{
-		if((event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up) && !isJumping)
+		if ((event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up) && !isJumping)
 		{
 			velocity.y = -600.f;
 			isJumping = true;
@@ -30,22 +32,22 @@ void Player::handleEvent(sf::Event& event) // obsługa skoku
 	}
 }
 
-void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platforms)  // fizyka i ruch
+void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platforms)
 {
 	// --- SYSTEM NIEŚMIERTELNOŚCI I MIGANIA ---
 	if (invincibilityTimer > sf::Time::Zero)
 	{
-		invincibilityTimer -= dt; // Czas leci w dół
+		invincibilityTimer -= dt;
 
 		// Co 100 milisekund zmieniamy przezroczystość (miganie)
 		if (static_cast<int>(invincibilityTimer.asMilliseconds() / 100) % 2 == 0)
-			shape.setFillColor(sf::Color(255, 0, 0, 100)); // Półprzezroczysty
+			shape.setFillColor(sf::Color(baseColor.r, baseColor.g, baseColor.b, 100)); // Półprzezroczysty, ale zachowuje kolor!
 		else
-			shape.setFillColor(sf::Color::Red); // Normalny
+			shape.setFillColor(baseColor); // Normalny
 	}
 	else
 	{
-		shape.setFillColor(sf::Color::Red); // Czas minął, upewnij się że kolor jest normalny
+		shape.setFillColor(baseColor); // Wracamy do zapamiętanego koloru!
 	}
 
 	float playerSpeed = 300.f;
@@ -61,7 +63,7 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
 		velocity.x -= playerSpeed;
 	}
 
-	position.x += velocity.x * dt.asSeconds();  // ruch na osi x
+	position.x += velocity.x * dt.asSeconds();
 	shape.setPosition(position);
 
 	for (const auto& i : platforms)
@@ -81,7 +83,7 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
 		}
 	}
 
-	velocity.y += gravity * dt.asSeconds();    // ruch na osi y
+	velocity.y += gravity * dt.asSeconds();
 	position.y += velocity.y * dt.asSeconds();
 	shape.setPosition(position);
 	isJumping = true;
@@ -114,23 +116,22 @@ sf::Vector2f Player::getPosition() const
 {
 	return position;
 }
+
 void Player::setColor(sf::Color color)
 {
-    shape.setFillColor(color);
+	baseColor = color;
+	shape.setFillColor(baseColor);
 }
 
 void Player::takeDamage(int damage)
 {
-	// Otrzymujesz obrażenia TYLKO wtedy, gdy zegar nieśmiertelności spadł do zera
 	if (invincibilityTimer <= sf::Time::Zero)
 	{
 		hp -= damage;
-		invincibilityTimer = sf::seconds(1.5f); // Dajemy 1.5 sekundy ochrony!
+		invincibilityTimer = sf::seconds(1.5f);
 
-		velocity.y = -400.f; // Odrzut w górę od kolców
+		velocity.y = -400.f;
 		isJumping = true;
-
-		std::cout << "Aua! Zostalo zyc: " << hp << std::endl; // Wypisze w czarnej konsoli
 	}
 }
 
@@ -146,6 +147,6 @@ bool Player::isAlive() const
 
 void Player::bounce()
 {
-	velocity.y = -600.f; // Wybija gracza z powrotem w powietrze
+	velocity.y = -600.f;
 	isJumping = true;
 }

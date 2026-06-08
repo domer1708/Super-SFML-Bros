@@ -1,6 +1,11 @@
 #pragma once
-#include "Enemy.h"
+#include <SFML/Graphics.hpp>
+#include <memory>
+#include <vector>
 #include "Entity.h"
+#include "Level.h"
+#include <fstream>
+#include "PauseMenu.h"
 
 enum class StateAction // stany
 {
@@ -56,23 +61,30 @@ public:
 class PlayState : public State
 {
 private:
-    std::unique_ptr<Player> player; // wskaźnik na gracza
-    sf::View camera; // kamera podążająca za graczem
+    std::unique_ptr<Player> player;
+    sf::View camera;
     Level currentLevel;
 
-    // --- NOWE ELEMETY DLA POTWORKÓW I GAME OVER ---
-    std::vector<Enemy> enemies; // lista naszych 4 potworków
-    
-    bool isGameOver;      // czy gracz przegrał?
-    sf::Font font;        // czcionka do napisu Game Over
-    sf::Text gameOverText;// napis "GAME OVER"
-    sf::Text resetText;   // napis pod spodem "Wcisnij ESC, aby wrocic do menu"
-    // ----------------------------------------------
-	sf::ConvexShape heartShape;
+    int currentLevelNumber;
+    int currentCharacterIndex; // Zapamiętujemy kim gramy
+    bool isGameWon;
+    sf::Text gameWonText;
+
+    bool isGameOver;
+    sf::Font font;
+    sf::Text gameOverText;
+    sf::Text resetText;
+    sf::ConvexShape heartShape;
+
+    // Logika pauzy
+    std::unique_ptr<PauseMenu> pauseMenu;
+    bool isPaused;
+
+    void saveGame();
+    void loadGame();
 
 public:
     PlayState(int characterIndex);
-
     StateAction handleEvent(sf::Event& event) override;
     StateAction update(sf::Time dt) override;
     void render(sf::RenderWindow& window) override;

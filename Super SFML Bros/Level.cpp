@@ -3,6 +3,11 @@
 bool Level::loadFromFile(const std::string& filename)
 {
     platforms.clear();
+    stars.clear();
+    traps.clear();
+    portals.clear();
+    enemies.clear(); 
+
     playerSpawnPosition = sf::Vector2f(100.f, 100.f);
 
     std::ifstream file(filename);
@@ -39,6 +44,14 @@ bool Level::loadFromFile(const std::string& filename)
             else if (tile == '^')
             {
                 traps.push_back(Trap(x * tile_size, y * tile_size));
+            }
+            else if (tile == 'F')
+            {
+                portals.push_back(Portal(x * tile_size, y * tile_size));
+            }
+            else if (tile == 'E')
+            {
+                enemies.push_back(Enemy(x * tile_size, y * tile_size));
             }
         }
         y++;
@@ -86,4 +99,14 @@ const std::vector<Trap>& Level::getTraps() const
 void Level::removeCollectedStars()
 {
     stars.erase(std::remove_if(stars.begin(), stars.end(), [](const Star& s) { return s.isCollected(); }), stars.end());
+}
+
+std::vector<Portal>& Level::getPortals()
+{ 
+    return portals; 
+
+}
+std::vector<Enemy>& Level::getEnemies() 
+{ 
+    return enemies; 
 }

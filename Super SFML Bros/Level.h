@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Elements.h"
+#include "Enemy.h"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
@@ -16,6 +17,8 @@ private:
     std::vector<sf::RectangleShape> platforms;
     std::vector<Star> stars;
     std::vector<Trap> traps;
+    std::vector<Portal> portals;
+    std::vector<Enemy> enemies;
     sf::Vector2f playerSpawnPosition;      
     static constexpr float tile_size = 50.f;
 
@@ -29,4 +32,6 @@ public:
     std::vector<Star>& getStars();
     const std::vector<Trap>& getTraps() const;
     void removeCollectedStars();
+    std::vector<Portal>& getPortals();
+    std::vector<Enemy>& getEnemies();
 };

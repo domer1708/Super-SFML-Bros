@@ -33,3 +33,14 @@ public:
     sf::FloatRect getBounds() const;
     int getDamage() const;
 };
+
+class Portal
+{
+private:
+    sf::RectangleShape shape;
+
+public:
+    Portal(float x, float y);
+    void render(sf::RenderWindow& window);
+    sf::FloatRect getBounds() const;
+};
