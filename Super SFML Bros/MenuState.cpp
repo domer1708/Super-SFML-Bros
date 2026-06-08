@@ -3,52 +3,45 @@
 
 MenuState::MenuState()
 {
-    // Ładujemy nową, kanciatą czcionkę pixel art!
-    // Jeśli nie pobrałeś jeszcze pliku, zmień tymczasowo na "pliki/arial.ttf"
-    font.loadFromFile("pliki/PressStart2P-Regular.ttf"); 
+    font.loadFromFile("pliki/PressStart2P-Regular.ttf");
 
-    // --- TYTUŁ GRY (Wyśrodkowany i większy) ---
-    title.setFont(font);                    
+    title.setFont(font);
     title.setString("SUPER SFML BROS");
-    title.setCharacterSize(42); // Dla czcionek pixelowych 42 jest ogromne i czytelne
+    title.setCharacterSize(42);
     title.setFillColor(sf::Color::White);
-    // Automatyczne centrowanie tytułu na osi X (ekran ma 800px)
     float titleWidth = title.getGlobalBounds().width;
     title.setPosition(sf::Vector2f((800.f - titleWidth) / 2.f, 60.f));
-     
-    // --- RAMKA MENU (Idealnie na środku) ---
-    menuFrame.setSize(sf::Vector2f(340.f, 250.f));       
-    menuFrame.setPosition(sf::Vector2f((800.f - 340.f) / 2.f, 200.f)); // X: 230, Y: 200
-    menuFrame.setFillColor(sf::Color(20, 20, 20, 220)); // Ciemniejsze, ładniejsze tło
+
+    menuFrame.setSize(sf::Vector2f(340.f, 250.f));
+    menuFrame.setPosition(sf::Vector2f((800.f - 340.f) / 2.f, 200.f));
+    menuFrame.setFillColor(sf::Color(20, 20, 20, 220));
     menuFrame.setOutlineThickness(5.f);
     menuFrame.setOutlineColor(sf::Color::Yellow);
 
-    // --- OPCJE MENU (Wyśrodkowane wewnątrz ramki) ---
-    menu[0].setFont(font);                         
-    menu[0].setFillColor(sf::Color::Yellow);
-    menu[0].setString("Graj");
-    menu[0].setCharacterSize(24);
-    float gWidth = menu[0].getGlobalBounds().width;
-    menu[0].setPosition(sf::Vector2f((800.f - gWidth) / 2.f, 250.f));
+    // --- 3 OPCJE MENU ---
+    std::string options[3] = { "Nowa Gra", "Wczytaj Gre", "Wyjdz" };
+    for (int i = 0; i < 3; i++) {
+        menu[i].setFont(font);
+        menu[i].setFillColor(i == 0 ? sf::Color::Yellow : sf::Color::White);
+        menu[i].setString(options[i]);
+        menu[i].setCharacterSize(24);
+        float wWidth = menu[i].getGlobalBounds().width;
 
-    menu[1].setFont(font);                         
-    menu[1].setFillColor(sf::Color::White);
-    menu[1].setString("Wyjdz");
-    menu[1].setCharacterSize(24);
-    float wWidth = menu[1].getGlobalBounds().width;
-    menu[1].setPosition(sf::Vector2f((800.f - wWidth) / 2.f, 330.f));
+        // IDEALNE WYŚRODKOWANIE PIONOWE:
+        // Startujemy od Y=250 (nie 230) i dajemy odstępy po 60px (nie 50)
+        menu[i].setPosition(sf::Vector2f((800.f - wWidth) / 2.f, 250.f + (i * 60.f)));
+    }
 
     selectedItemIndex = 0;
-
-    // --- INICJALIZACJA WYBORU POSTACI ---
     isChoosingCharacter = false;
     selectedCharacterIndex = 0;
 
-    // Centrujemy też klocki wyboru postaci wewnątrz nowej ramki
-    float startX = 265.f; 
+    // --- MENU WYBORU POSTACI (TEŻ WYŚRODKOWANE) ---
+    float startX = 265.f;
     for (int i = 0; i < 3; i++) {
         characterBoxes[i].setSize(sf::Vector2f(65.f, 100.f));
-        characterBoxes[i].setPosition(sf::Vector2f(startX + (i * 75.f), 240.f));
+        // Opuszczone na Y=250 (wcześniej 240)
+        characterBoxes[i].setPosition(sf::Vector2f(startX + (i * 75.f), 250.f));
     }
     characterBoxes[0].setFillColor(sf::Color::Red);
     characterBoxes[1].setFillColor(sf::Color::Green);
@@ -60,15 +53,14 @@ MenuState::MenuState()
 
     for (int i = 0; i < 3; i++) {
         characterNames[i].setFont(font);
-        characterNames[i].setCharacterSize(14); // Mniejsza czcionka, żeby napisy nie błądziły
+        characterNames[i].setCharacterSize(14);
         characterNames[i].setFillColor(i == 0 ? sf::Color::Yellow : sf::Color::White);
         float nWidth = characterNames[i].getGlobalBounds().width;
-        // Centrowanie napisu dokładnie pod jego własnym klockiem
         float boxCenter = characterBoxes[i].getPosition().x + 32.5f;
-        characterNames[i].setPosition(sf::Vector2f(boxCenter - (nWidth / 2.f), 360.f));
+        // Opuszczone na Y=370 (wcześniej 360)
+        characterNames[i].setPosition(sf::Vector2f(boxCenter - (nWidth / 2.f), 370.f));
     }
 
-    // --- GENEROWANIE GWIAZD ---
     initStars();
 }
 
@@ -105,14 +97,8 @@ StateAction MenuState::handleEvent(sf::Event& event)
                 selectedCharacterIndex++;
                 characterNames[selectedCharacterIndex].setFillColor(sf::Color::Yellow);
             }
-            else if (event.key.code == sf::Keyboard::Escape)
-            {
-                isChoosingCharacter = false;
-            }
-            else if (event.key.code == sf::Keyboard::Enter)
-            {
-                return StateAction::Play; 
-            }
+            else if (event.key.code == sf::Keyboard::Escape) isChoosingCharacter = false;
+            else if (event.key.code == sf::Keyboard::Enter) return StateAction::Play;
         }
         else
         {
@@ -122,7 +108,8 @@ StateAction MenuState::handleEvent(sf::Event& event)
                 selectedItemIndex--;
                 menu[selectedItemIndex].setFillColor(sf::Color::Yellow);
             }
-            else if ((event.key.code == sf::Keyboard::Down || event.key.code == sf::Keyboard::S) && selectedItemIndex < 1)
+            // ZMIANA: Zezwalamy zjechać na index mniejszy niż 2 (czyli 0, 1 i 2)
+            else if ((event.key.code == sf::Keyboard::Down || event.key.code == sf::Keyboard::S) && selectedItemIndex < 2)
             {
                 menu[selectedItemIndex].setFillColor(sf::Color::White);
                 selectedItemIndex++;
@@ -130,14 +117,9 @@ StateAction MenuState::handleEvent(sf::Event& event)
             }
             else if (event.key.code == sf::Keyboard::Enter)
             {
-                if (selectedItemIndex == 0) 
-                {
-                    isChoosingCharacter = true; 
-                }
-                else if (selectedItemIndex == 1) 
-                {
-                    return StateAction::Exit;
-                }
+                if (selectedItemIndex == 0) isChoosingCharacter = true;
+                else if (selectedItemIndex == 1) return StateAction::Load; // Wczytaj
+                else if (selectedItemIndex == 2) return StateAction::Exit; // Wyjdź
             }
         }
     }
@@ -181,17 +163,17 @@ void MenuState::render(sf::RenderWindow& window)
 {
     window.setView(window.getDefaultView());
 
-    // 1. RYSOWANIE GWIAZD W TLE (Najpierw, żeby były pod napisami)
+    // 1. RYSOWANIE GWIAZD W TLE
     for (const auto& star : stars)
     {
         sf::RectangleShape starShape(sf::Vector2f(star.size, star.size));
         starShape.setPosition(star.position);
-        starShape.setFillColor(sf::Color(255, 255, 255, 180)); // Lekko przezroczyste białe punkty
+        starShape.setFillColor(sf::Color(255, 255, 255, 180));
         window.draw(starShape);
     }
 
     // 2. RYSOWANIE ELEMENTÓW INTERFEJSU
-    window.draw(title); 
+    window.draw(title);
     window.draw(menuFrame);
 
     if (isChoosingCharacter)
@@ -204,7 +186,8 @@ void MenuState::render(sf::RenderWindow& window)
     }
     else
     {
-        for (int i = 0; i < 2; i++)
+        // ZMIANA: Pętla teraz rysuje 3 elementy (i < 3), a nie 2!
+        for (int i = 0; i < 3; i++)
         {
             window.draw(menu[i]);
         }

@@ -24,16 +24,15 @@ void Game::handleStateChange(StateAction action)
 {
 	if (action == StateAction::Play)
 	{
-		// 1. Wyciągamy informacje z Menu
 		MenuState* menu = dynamic_cast<MenuState*>(currentState.get());
-		int chosenCharacter = 0; // Domyślnie Mario (0)
-
-		if (menu != nullptr)
-		{
-			chosenCharacter = menu->getSelectedCharacter();
-		}
-		// 2. Tworzymy PlayState i podajemy mu indeks z menu
-		currentState = std::make_unique<PlayState>(chosenCharacter);
+		int chosenCharacter = menu ? menu->getSelectedCharacter() : 0;
+		// False = nowa gra
+		currentState = std::make_unique<PlayState>(chosenCharacter, false);
+	}
+	else if (action == StateAction::Load)
+	{
+		// True = wczytaj z pliku (postać nadpisze się sama z zapisu)
+		currentState = std::make_unique<PlayState>(0, true);
 	}
 	else if (action == StateAction::Menu)
 	{

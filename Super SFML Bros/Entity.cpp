@@ -7,6 +7,7 @@ Player::Player()
 	velocity = sf::Vector2f(0.f, 0.f);
 
 	hp = 3;
+	score = 0;
 	invincibilityTimer = sf::Time::Zero;
 
 	baseColor = sf::Color::Red;      // Zapisujemy domyślny kolor na starcie

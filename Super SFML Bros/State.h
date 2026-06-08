@@ -12,6 +12,7 @@ enum class StateAction // stany
 	Keep,
 	Menu,
 	Play,
+    Load,
 	Exit
 };
 
@@ -31,7 +32,7 @@ private:
 	sf::Font font;  // czcionka
 	sf::Text title; // tytuł
 	sf::RectangleShape menuFrame; // ramka
-	sf::Text menu[2]; // dwie opcje (graj, wyjdź)
+	sf::Text menu[3]; // dwie opcje (graj, wyjdź)
 	int selectedItemIndex; // index zaznaczonej opcji
 
 	bool isChoosingCharacter;
@@ -75,16 +76,17 @@ private:
     sf::Text gameOverText;
     sf::Text resetText;
     sf::ConvexShape heartShape;
+    sf::Text starText;
 
     // Logika pauzy
     std::unique_ptr<PauseMenu> pauseMenu;
     bool isPaused;
 
     void saveGame();
-    void loadGame();
+    bool loadGame();
 
 public:
-    PlayState(int characterIndex);
+    PlayState(int characterIndex, bool loadFromSave = false);
     StateAction handleEvent(sf::Event& event) override;
     StateAction update(sf::Time dt) override;
     void render(sf::RenderWindow& window) override;

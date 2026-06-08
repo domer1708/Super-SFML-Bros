@@ -5,7 +5,7 @@
 #include <iostream>
 #include <fstream>
 
-PlayState::PlayState(int characterIndex)
+PlayState::PlayState(int characterIndex, bool loadFromSave)
 {
     player = std::make_unique<Player>();
     camera.setSize(800.f, 600.f);
@@ -18,79 +18,81 @@ PlayState::PlayState(int characterIndex)
 
     font.loadFromFile("pliki/arial.ttf");
 
-    gameOverText.setFont(font);
-    gameOverText.setString("GAME OVER");
-    gameOverText.setCharacterSize(60);
-    gameOverText.setFillColor(sf::Color::Red);
-    gameOverText.setStyle(sf::Text::Bold);
+    // Konfiguracja Napisów (Game Over itp.)
+    gameOverText.setFont(font); gameOverText.setString("GAME OVER"); gameOverText.setCharacterSize(60); gameOverText.setFillColor(sf::Color::Red); gameOverText.setStyle(sf::Text::Bold);
+    gameWonText.setFont(font); gameWonText.setString("WYGRALES GRE!"); gameWonText.setCharacterSize(60); gameWonText.setFillColor(sf::Color::Yellow); gameWonText.setStyle(sf::Text::Bold);
+    resetText.setFont(font); resetText.setString("Wcisnij ESC, aby wrocic do menu"); resetText.setCharacterSize(20); resetText.setFillColor(sf::Color::White);
 
-    gameWonText.setFont(font);
-    gameWonText.setString("WYGRALES GRE!");
-    gameWonText.setCharacterSize(60);
-    gameWonText.setFillColor(sf::Color::Yellow);
-    gameWonText.setStyle(sf::Text::Bold);
+    // --- HUD GWIAZDEK ---
+    starText.setFont(font);
+    starText.setCharacterSize(24);
+    starText.setFillColor(sf::Color::Yellow);
+    starText.setPosition(620.f, 20.f); // Prawy górny róg
+    starText.setString("Gwiazdki: 0");
 
-    resetText.setFont(font);
-    resetText.setString("Wcisnij ESC, aby wrocic do menu");
-    resetText.setCharacterSize(20);
-    resetText.setFillColor(sf::Color::White);
+    // Próba wczytania z menu głównego
+    bool loaded = false;
+    if (loadFromSave) {
+        loaded = loadGame();
+    }
 
-    if (characterIndex == 0) player->setColor(sf::Color::Red);
-    else if (characterIndex == 1) player->setColor(sf::Color::Green);
-    else if (characterIndex == 2) player->setColor(sf::Color::Blue);
+    // Jeśli nowa gra, lub brak zapisu (fallback)
+    if (!loaded) {
+        if (characterIndex == 0) player->setColor(sf::Color::Red);
+        else if (characterIndex == 1) player->setColor(sf::Color::Green);
+        else if (characterIndex == 2) player->setColor(sf::Color::Blue);
 
-    currentLevel.loadFromFile("pliki/level1.txt");
-    player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
+        currentLevel.loadFromFile("pliki/level1.txt");
+        player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
+    }
 
-    heartShape.setPointCount(6);
-    heartShape.setPoint(0, sf::Vector2f(20.f, 10.f));
-    heartShape.setPoint(1, sf::Vector2f(30.f, 0.f));
-    heartShape.setPoint(2, sf::Vector2f(40.f, 12.f));
-    heartShape.setPoint(3, sf::Vector2f(20.f, 38.f));
-    heartShape.setPoint(4, sf::Vector2f(0.f, 12.f));
-    heartShape.setPoint(5, sf::Vector2f(10.f, 0.f));
+    // Geometria serca
+    heartShape.setPointCount(6); heartShape.setPoint(0, sf::Vector2f(20.f, 10.f)); heartShape.setPoint(1, sf::Vector2f(30.f, 0.f)); heartShape.setPoint(2, sf::Vector2f(40.f, 12.f)); heartShape.setPoint(3, sf::Vector2f(20.f, 38.f)); heartShape.setPoint(4, sf::Vector2f(0.f, 12.f)); heartShape.setPoint(5, sf::Vector2f(10.f, 0.f));
 
+    // Menu pauzy
     pauseMenu = std::make_unique<PauseMenu>(font);
 }
 
-void PlayState::saveGame() {
+void PlayState::saveGame() 
+{
     std::ofstream file("pliki/zapis.txt");
-    if (file.is_open()) 
-    {
-        file << currentLevelNumber << "\n" << currentCharacterIndex << "\n" << player->getHp() << "\n"
+    if (file.is_open()) {
+        file << currentLevelNumber << "\n" << currentCharacterIndex << "\n"
+            << player->getHp() << "\n" << player->getScore() << "\n" // <-- ZAPISUJEMY SCORE
             << player->getPosition().x << "\n" << player->getPosition().y << "\n";
         file.close();
-        pauseMenu->setItemText(1, "ZAPISANO!");
+        if (pauseMenu) pauseMenu->setItemText(1, "ZAPISANO!");
     }
 }
 
-void PlayState::loadGame() {
-    // Zmieniamy ścieżkę na "pliki/zapis.txt"
+bool PlayState::loadGame() {
     std::ifstream file("pliki/zapis.txt");
-    if (file.is_open()) 
-    {
-        int lvl, charIdx, hp;
+    if (file.is_open()) {
+        int lvl, charIdx, hp, score;
         float px, py;
-        file >> lvl >> charIdx >> hp >> px >> py;
+        // CZYTAMY SCORE
+        file >> lvl >> charIdx >> hp >> score >> px >> py;
         file.close();
 
         currentLevelNumber = lvl;
         currentCharacterIndex = charIdx;
         player->setHp(hp);
+        player->setScore(score); // Ustawiamy odzyskane gwiazdki
 
-        // Przywracanie koloru
         if (charIdx == 0) player->setColor(sf::Color::Red);
         else if (charIdx == 1) player->setColor(sf::Color::Green);
         else if (charIdx == 2) player->setColor(sf::Color::Blue);
 
-        // Ładowanie poziomu
         currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt");
         player->setPosition(px, py);
         isPaused = false;
+
+        if (pauseMenu) pauseMenu->setItemText(2, "WCZYTANO!");
+        return true;
     }
-    else 
-    {
-        pauseMenu->setItemText(2, "BRAK ZAPISU!");
+    else {
+        if (pauseMenu) pauseMenu->setItemText(2, "BRAK ZAPISU!");
+        return false;
     }
 }
 
@@ -121,43 +123,97 @@ StateAction PlayState::handleEvent(sf::Event& event)
 
 StateAction PlayState::update(sf::Time dt)
 {
-    if (isGameOver || isGameWon || isPaused) return StateAction::Keep;
+    // ZATRZYMANIE CZASU JEŚLI PAUZA LUB KONIEC GRY
+    if (isGameOver || isGameWon || isPaused)
+    {
+        return StateAction::Keep;
+    }
 
+    // 1. Aktualizacja gracza i kamery
     player->update(dt, currentLevel.getPlatforms());
     camera.setCenter(player->getPosition());
 
+    // 2. Potworki (aktualizacja, kolizje, walka)
     auto& levelEnemies = currentLevel.getEnemies();
-    for (auto& enemy : levelEnemies) {
+    for (auto& enemy : levelEnemies)
+    {
         if (!enemy.isAlive()) continue;
+
         enemy.update(dt, currentLevel.getPlatforms());
-        if (player->getGlobalBounds().intersects(enemy.getGlobalBounds())) {
-            if (player->getVelocity().y > 0 && player->getGlobalBounds().top + player->getGlobalBounds().height < enemy.getGlobalBounds().top + enemy.getGlobalBounds().height / 2.f) {
+
+        if (player->getGlobalBounds().intersects(enemy.getGlobalBounds()))
+        {
+            sf::FloatRect pBounds = player->getGlobalBounds();
+            sf::FloatRect eBounds = enemy.getGlobalBounds();
+
+            // CZY GRACZ SKOCZYŁ NA GŁOWĘ?
+            if (player->getVelocity().y > 0 && pBounds.top + pBounds.height < eBounds.top + eBounds.height / 2.f)
+            {
                 enemy.die();
                 player->bounce();
             }
-            else player->takeDamage(1);
-        }
-    }
-    levelEnemies.erase(std::remove_if(levelEnemies.begin(), levelEnemies.end(), [](const Enemy& e) { return !e.isAlive(); }), levelEnemies.end());
-
-    currentLevel.removeCollectedStars();
-    for (auto& star : currentLevel.getStars())
-        if (!star.isCollected() && player->getGlobalBounds().intersects(star.getBounds())) star.collect();
-    for (const auto& trap : currentLevel.getTraps())
-        if (player->getGlobalBounds().intersects(trap.getBounds())) player->takeDamage(trap.getDamage());
-
-    for (const auto& portal : currentLevel.getPortals()) {
-        if (player->getGlobalBounds().intersects(portal.getBounds())) {
-            currentLevelNumber++;
-            if (currentLevelNumber > 3) isGameWon = true;
-            else {
-                currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt");
-                player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
+            else
+            {
+                player->takeDamage(1);
             }
         }
     }
 
-    if (!player->isAlive()) isGameOver = true;
+    // Sprzątanie martwych potworów
+    levelEnemies.erase(std::remove_if(levelEnemies.begin(), levelEnemies.end(), [](const Enemy& e) { return !e.isAlive(); }), levelEnemies.end());
+
+    // 3. Gwiazdki i Punktacja
+    currentLevel.removeCollectedStars(); // Usuwamy te zebrane w poprzedniej klatce
+
+    for (auto& star : currentLevel.getStars())
+    {
+        if (!star.isCollected() && player->getGlobalBounds().intersects(star.getBounds()))
+        {
+            star.collect();
+            player->addScore(1); // Dodajemy punkt za gwiazdkę!
+        }
+    }
+
+    // Aktualizacja napisu z punktacją (odświeżana co klatkę)
+    starText.setString("Gwiazdki: " + std::to_string(player->getScore()));
+
+    // 4. Pułapki
+    for (const auto& trap : currentLevel.getTraps())
+    {
+        if (player->getGlobalBounds().intersects(trap.getBounds()))
+        {
+            player->takeDamage(trap.getDamage());
+        }
+    }
+
+    // 5. Portale i przechodzenie poziomów
+    for (const auto& portal : currentLevel.getPortals())
+    {
+        if (player->getGlobalBounds().intersects(portal.getBounds()))
+        {
+            currentLevelNumber++;
+
+            if (currentLevelNumber > 3)
+            {
+                isGameWon = true;
+            }
+            else
+            {
+                std::string nextMap = "pliki/level" + std::to_string(currentLevelNumber) + ".txt";
+                if (currentLevel.loadFromFile(nextMap))
+                {
+                    player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
+                }
+            }
+        }
+    }
+
+    // 6. Sprawdzanie śmierci gracza
+    if (!player->isAlive())
+    {
+        isGameOver = true;
+    }
+
     return StateAction::Keep;
 }
 
@@ -187,4 +243,5 @@ void PlayState::render(sf::RenderWindow& window)
         resetText.setPosition(400.f - resetText.getGlobalBounds().width / 2.f, 320.f);
         window.draw(gameWonText); window.draw(resetText);
     }
+    window.draw(starText);
 }

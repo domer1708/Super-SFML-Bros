@@ -23,6 +23,7 @@ private:
 	int hp;                      
 	sf::Time invincibilityTimer;
 	sf::Color baseColor;
+	int score;
 
 public:
 	Player();
@@ -40,4 +41,7 @@ public:
 	sf::Vector2f getVelocity() const { return velocity; }
 	void bounce(); 
 	void setHp(int newHp) { hp = newHp; }
+	int getScore() const { return score; }
+	void addScore(int points) { score += points; }
+	void setScore(int s) { score = s; }
 };
