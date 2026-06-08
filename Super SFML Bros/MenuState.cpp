@@ -15,7 +15,7 @@ MenuState::MenuState()
     // Automatyczne centrowanie tytułu na osi X (ekran ma 800px)
     float titleWidth = title.getGlobalBounds().width;
     title.setPosition(sf::Vector2f((800.f - titleWidth) / 2.f, 60.f));
-
+     
     // --- RAMKA MENU (Idealnie na środku) ---
     menuFrame.setSize(sf::Vector2f(340.f, 250.f));       
     menuFrame.setPosition(sf::Vector2f((800.f - 340.f) / 2.f, 200.f)); // X: 230, Y: 200

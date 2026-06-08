@@ -1,5 +1,5 @@
 #pragma once
-
+#include "Enemy.h"
 #include "Entity.h"
 
 enum class StateAction // stany
@@ -56,14 +56,23 @@ public:
 class PlayState : public State
 {
 private:
-	std::unique_ptr<Player> player; // wskaźnik na gracza
-	sf::View camera; // kamera podążająca za graczem
-	Level currentLevel;
+    std::unique_ptr<Player> player; // wskaźnik na gracza
+    sf::View camera; // kamera podążająca za graczem
+    Level currentLevel;
+
+    // --- NOWE ELEMETY DLA POTWORKÓW I GAME OVER ---
+    std::vector<Enemy> enemies; // lista naszych 4 potworków
+    
+    bool isGameOver;      // czy gracz przegrał?
+    sf::Font font;        // czcionka do napisu Game Over
+    sf::Text gameOverText;// napis "GAME OVER"
+    sf::Text resetText;   // napis pod spodem "Wcisnij ESC, aby wrocic do menu"
+    // ----------------------------------------------
 
 public:
-	PlayState(int characterIndex);
+    PlayState(int characterIndex);
 
-	StateAction handleEvent(sf::Event& event) override;
-	StateAction update(sf::Time dt) override;
-	void render(sf::RenderWindow& window) override;
+    StateAction handleEvent(sf::Event& event) override;
+    StateAction update(sf::Time dt) override;
+    void render(sf::RenderWindow& window) override;
 };
