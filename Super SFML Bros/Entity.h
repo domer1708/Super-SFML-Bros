@@ -26,7 +26,8 @@ public:
 	void handleEvent(sf::Event& event); // obsługa skoku
 	void update(sf::Time dt, const std::vector<sf::RectangleShape>& platforms) override; // aktualizacja fizyki i ruchu
 	void render(sf::RenderWindow& window) override; // rysowanie
-
+    void setColor(sf::Color color);
 	sf::Vector2f getPosition() const;
 	void setPosition(float x, float y);
+	
 };

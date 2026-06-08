@@ -22,17 +22,27 @@ void Game::run()
 void Game::handleStateChange(StateAction action)
 {
 	if (action == StateAction::Play)
-	{
-		currentState = std::make_unique<PlayState>();
-	}
-	else if (action == StateAction::Menu)
-	{
-		currentState = std::make_unique<MenuState>();
-	}
-	else if (action == StateAction::Exit)
-	{
-		window.close();
-	}
+    {
+        // Sprawdzamy, czy obecny stan to na pewno menu
+        MenuState* menu = dynamic_cast<MenuState*>(currentState.get());
+        int chosenCharacter = 0; // domyślnie Mario
+        
+        if (menu != nullptr)
+        {
+            chosenCharacter = menu->getSelectedCharacter(); // pobieramy wybór z menu
+        }
+
+        // Tworzymy nową rozgrywkę, przekazując jej numer wybranej postaci!
+        currentState = std::make_unique<PlayState>(chosenCharacter);
+    }
+    else if (action == StateAction::Menu)
+    {
+        currentState = std::make_unique<MenuState>();
+    }
+    else if (action == StateAction::Exit)
+    {
+        window.close();
+    }
 }
 
 void Game::processEvents()

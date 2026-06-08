@@ -30,8 +30,8 @@ private:
 	int selectedItemIndex; // index zaznaczonej opcji
 
 	bool isChoosingCharacter;
-	sf::RectangleShape characterBoxes[2];
-	sf::Text characterNames[2];
+	sf::RectangleShape characterBoxes[3];
+	sf::Text characterNames[3];
 	int selectedCharacterIndex;
 
 public:
@@ -40,6 +40,7 @@ public:
 	StateAction handleEvent(sf::Event& event) override;
 	StateAction update(sf::Time dt) override;
 	void render(sf::RenderWindow& window) override;
+	int getSelectedCharacter() const { return selectedCharacterIndex; }
 };
 
 class PlayState : public State
@@ -50,7 +51,7 @@ private:
 	Level currentLevel;
 
 public:
-	PlayState();
+	PlayState(int characterIndex);
 
 	StateAction handleEvent(sf::Event& event) override;
 	StateAction update(sf::Time dt) override;

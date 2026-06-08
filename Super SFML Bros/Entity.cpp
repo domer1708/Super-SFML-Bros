@@ -95,3 +95,7 @@ sf::Vector2f Player::getPosition() const
 {
 	return position;
 }
+void Player::setColor(sf::Color color)
+{
+    shape.setFillColor(color);
+}

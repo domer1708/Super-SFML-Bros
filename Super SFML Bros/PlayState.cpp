@@ -1,10 +1,21 @@
 #include "State.h"
 
-PlayState::PlayState()
+PlayState::PlayState(int characterIndex)
 {
 	player = std::make_unique<Player>();
 	camera.setSize(800.f, 600.f);
     
+    // --- USTAWIANIE KOLORU POSTACI ---
+    if (characterIndex == 0) {
+        player->setColor(sf::Color::Red);   // Mario
+    }
+    else if (characterIndex == 1) {
+        player->setColor(sf::Color::Green); // Luigi
+    }
+    else if (characterIndex == 2) {
+        player->setColor(sf::Color::Blue);  // Toad
+    }
+    // ---
     if (currentLevel.loadFromFile("pliki/level1.txt"))
     {
         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
