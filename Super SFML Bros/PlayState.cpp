@@ -37,8 +37,13 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     starText.setFont(font);
     starText.setCharacterSize(24);
     starText.setFillColor(sf::Color::Yellow);
-    starText.setPosition(520.f, 20.f); // Prawy górny róg
+    starText.setPosition(420.f, 20.f); // Prawy górny róg
     starText.setString("Gwiazdki: 0");
+    // --- HUD PUNKTÓW (SCORE) ---
+    scoreText.setFont(font);
+    scoreText.setCharacterSize(16);
+    scoreText.setFillColor(sf::Color::White); // Biały tekst, ładnie odetnie się od żółtych gwiazdek
+    scoreText.setString("Score: 000000");
 
     // Próba wczytania z menu głównego
     bool loaded = false;
@@ -178,6 +183,24 @@ StateAction PlayState::update(sf::Time dt)
             {
                 enemy.die();
                 player->bounce();
+
+                player->incrementCombo();
+                int combo = player->getCombo();
+
+                // Przypisujemy punkty na podstawie serii (jak w Mario)
+                if (combo == 1)      player->addScore(100);
+                else if (combo == 2) player->addScore(200);
+                else if (combo == 3) player->addScore(400);
+                else if (combo == 4) player->addScore(800);
+                else if (combo == 5) player->addScore(1000);
+                else if (combo == 6) player->addScore(2000);
+                else if (combo == 7) player->addScore(4000);
+                else if (combo >= 8) 
+                {
+                    player->addScore(8000);
+                    player->setHp(player->getHp() + 1); // 1-UP! Dodatkowe życie za combo x8 lub większe!
+                    if(player->getHp() > 3) player->setHp(3); // Blokada max 3 HP, jeśli takie macie zasady
+                }
             }
             else
             {
@@ -206,7 +229,7 @@ StateAction PlayState::update(sf::Time dt)
         if (!star.isCollected() && player->getGlobalBounds().intersects(star.getBounds()))
         {
             star.collect();
-            player->addScore(1); // Dodajemy punkt za gwiazdkę!
+            player->addScore(200); // Dodajemy punkt za gwiazdkę!
         }
     }
     for (auto& mushroom : currentLevel.getMushrooms())
@@ -283,6 +306,11 @@ void PlayState::render(sf::RenderWindow& window)
         heartShape.setFillColor(i < player->getHp() ? sf::Color::Red : sf::Color(60, 60, 60));
         window.draw(heartShape);
     }
+    // --- 2. TUTAJ COŚ NOWEGO: RYSOWANIE SCORE NA ŚRODKU ---
+    scoreText.setString("Score: " + std::to_string(player->getScore()));
+    // Ustawiamy na środku ekranu (400) minus połowa szerokości tekstu, wysokość 25.f
+    scoreText.setPosition(300.f - scoreText.getGlobalBounds().width / 2.f, 25.f);
+    window.draw(scoreText);
 
     if (isPaused) pauseMenu->render(window);
     if (isGameOver) 

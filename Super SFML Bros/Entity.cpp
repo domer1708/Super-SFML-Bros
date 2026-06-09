@@ -135,6 +135,7 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
 			{
 				position.y = i.getGlobalBounds().top - shape.getGlobalBounds().height;
 				isJumping = false;
+				resetCombo();
 			}
 			else if (velocity.y < 0)
 			{

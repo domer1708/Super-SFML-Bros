@@ -29,6 +29,7 @@ private:
     float acceleration = 1500.f;  // Jak szybko gracz przyspiesza
     float maxSpeed = 350.f;      // Maksymalna prędkość biegu
     float friction = 8.f;
+	int killCombo = 0; // Licznik zabitych potworów bez dotykania ziemi
 
 
 public:
@@ -57,5 +58,8 @@ public:
 		if(status) setColor(sf::Color(255, 215, 0)); // Złoty kolor gdy ma moc!
     	else setColor(sf::Color::Red); // Powrót do czerwonego (domyślny)
     }
+	void incrementCombo() { killCombo++; }
+    void resetCombo() { killCombo = 0; }
+    int getCombo() const { return killCombo; }
 
 };

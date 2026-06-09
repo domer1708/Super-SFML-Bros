@@ -77,7 +77,7 @@ private:
     sf::Text resetText;
     sf::ConvexShape heartShape;
     sf::Text starText;
-
+    sf::Text scoreText; // --- NOWY TEKST DLA PUNKTÓW ---
     // Logika pauzy
     std::unique_ptr<PauseMenu> pauseMenu;
     bool isPaused;
