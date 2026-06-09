@@ -19,6 +19,7 @@ private:
     std::vector<Trap> traps;
     std::vector<Portal> portals;
     std::vector<Enemy> enemies;
+    std::vector<Mushroom> mushrooms;
     sf::Vector2f playerSpawnPosition;      
     static constexpr float tile_size = 50.f;
 
@@ -34,4 +35,5 @@ public:
     void removeCollectedStars();
     std::vector<Portal>& getPortals();
     std::vector<Enemy>& getEnemies();
+    std::vector<Mushroom>& getMushrooms() { return mushrooms; }
 };

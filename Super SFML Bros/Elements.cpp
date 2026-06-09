@@ -1,5 +1,5 @@
 #include "Elements.h"
-
+#include <cmath>
 Star::Star(float x, float y)
 {
     shape.setPointCount(10); // Nasza gwiazda ma 10 wierzchołków
@@ -96,3 +96,19 @@ sf::FloatRect Portal::getBounds() const
 {
     return shape.getGlobalBounds();
 }
+Mushroom::Mushroom(float x, float y)
+{
+    shape.setSize(sf::Vector2f(30.f, 30.f));
+    shape.setFillColor(sf::Color(255, 128, 0)); // Pomarańczowy kolor super mocy
+    shape.setPosition(x + 10.f, y + 20.f);     // Wyśrodkowany na kafelku
+    collected = false;
+}
+
+void Mushroom::render(sf::RenderWindow& window)
+{
+    if (!collected) window.draw(shape);
+}
+
+sf::FloatRect Mushroom::getBounds() const { return shape.getGlobalBounds(); }
+void Mushroom::collect() { collected = true; }
+bool Mushroom::isCollected() const { return collected; }

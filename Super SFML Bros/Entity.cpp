@@ -4,6 +4,7 @@
 Player::Player()
 {
 	isJumping = false;
+	hasSuperPower = false;
 	velocity = sf::Vector2f(0.f, 0.f);
 
 	hp = 3;

@@ -24,6 +24,7 @@ private:
 	sf::Time invincibilityTimer;
 	sf::Color baseColor;
 	int score;
+	bool hasSuperPower;
 
 public:
 	Player();
@@ -44,4 +45,12 @@ public:
 	int getScore() const { return score; }
 	void addScore(int points) { score += points; }
 	void setScore(int s) { score = s; }
+	bool isSuper() const { return hasSuperPower; }
+    void setSuper(bool status) 
+	{ 
+        hasSuperPower = status; 
+		if(status) setColor(sf::Color(255, 215, 0)); // Złoty kolor gdy ma moc!
+    	else setColor(sf::Color::Red); // Powrót do czerwonego (domyślny)
+    }
+
 };

@@ -16,23 +16,34 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     currentLevelNumber = 1;
     currentCharacterIndex = characterIndex;
 
-    font.loadFromFile("pliki/arial.ttf");
+    font.loadFromFile("pliki/PressStart2P-Regular.ttf");
 
     // Konfiguracja Napisów (Game Over itp.)
-    gameOverText.setFont(font); gameOverText.setString("GAME OVER"); gameOverText.setCharacterSize(60); gameOverText.setFillColor(sf::Color::Red); gameOverText.setStyle(sf::Text::Bold);
-    gameWonText.setFont(font); gameWonText.setString("WYGRALES GRE!"); gameWonText.setCharacterSize(60); gameWonText.setFillColor(sf::Color::Yellow); gameWonText.setStyle(sf::Text::Bold);
-    resetText.setFont(font); resetText.setString("Wcisnij ESC, aby wrocic do menu"); resetText.setCharacterSize(20); resetText.setFillColor(sf::Color::White);
+    gameOverText.setFont(font);
+    gameOverText.setString("GAME OVER"); 
+    gameOverText.setCharacterSize(60); 
+    gameOverText.setFillColor(sf::Color::Red); 
+    gameOverText.setStyle(sf::Text::Bold);
+    gameWonText.setFont(font); 
+    gameWonText.setString("WYGRALES GRE!"); 
+    gameWonText.setCharacterSize(60); 
+    gameWonText.setFillColor(sf::Color::Yellow); 
+    gameWonText.setStyle(sf::Text::Bold);
+    resetText.setFont(font); resetText.setString("Wcisnij ESC, aby wrocic do menu"); 
+    resetText.setCharacterSize(20); 
+    resetText.setFillColor(sf::Color::White);
 
     // --- HUD GWIAZDEK ---
     starText.setFont(font);
     starText.setCharacterSize(24);
     starText.setFillColor(sf::Color::Yellow);
-    starText.setPosition(620.f, 20.f); // Prawy górny róg
+    starText.setPosition(520.f, 20.f); // Prawy górny róg
     starText.setString("Gwiazdki: 0");
 
     // Próba wczytania z menu głównego
     bool loaded = false;
-    if (loadFromSave) {
+    if (loadFromSave) 
+    {
         loaded = loadGame();
     }
 
@@ -130,9 +141,24 @@ StateAction PlayState::update(sf::Time dt)
     }
 
     // 1. Aktualizacja gracza i kamery
+    //player->update(dt, currentLevel.getPlatforms());
+    //camera.setCenter(player->getPosition());
     player->update(dt, currentLevel.getPlatforms());
-    camera.setCenter(player->getPosition());
+    
+    // --- NOWA LOGIKA KAMERY ---
+    sf::Vector2f playerPos = player->getPosition();
+    float maxCameraY = 300.f; // Granica, poniżej której kamera NIE spadnie (środek ekranu dla podłogi)
 
+    // Jeśli gracz jest wysoko, kamera za nim podąża normalnie. 
+    // Jeśli spada w przepaść (poniżej maxCameraY), kamera zatrzymuje się w miejscu.
+    if (playerPos.y < maxCameraY)
+    {
+        camera.setCenter(playerPos.x, playerPos.y);
+    }
+    else
+    {
+        camera.setCenter(playerPos.x, maxCameraY);
+    }
     // 2. Potworki (aktualizacja, kolizje, walka)
     auto& levelEnemies = currentLevel.getEnemies();
     for (auto& enemy : levelEnemies)
@@ -154,7 +180,16 @@ StateAction PlayState::update(sf::Time dt)
             }
             else
             {
-                player->takeDamage(1);
+                // Jeśli nie skoczył na głowę, ale ma super moc – zabija potwora z boku i traci moc
+                if (player->isSuper())
+                {
+                    enemy.die();
+                    player->setSuper(false); // Wraca do normalnego koloru, ale nie traci HP!
+                }
+                else
+                {
+                    player->takeDamage(1); // Normalny stan -> traci 1 HP
+                }
             }
         }
     }
@@ -173,6 +208,18 @@ StateAction PlayState::update(sf::Time dt)
             player->addScore(1); // Dodajemy punkt za gwiazdkę!
         }
     }
+    for (auto& mushroom : currentLevel.getMushrooms())
+    {
+        if (!mushroom.isCollected() && player->getGlobalBounds().intersects(mushroom.getBounds()))
+        {
+        mushroom.collect();
+        player->setSuper(true); // Gracz staje się Złoty!
+        player->setHp(player->getHp() + 1); // Dostaje dodatkowe żonko
+        }
+    }
+    // Czyszczenie zebranych grzybków z wektora
+    auto& lvlMushrooms = currentLevel.getMushrooms();
+    lvlMushrooms.erase(std::remove_if(lvlMushrooms.begin(), lvlMushrooms.end(), [](const Mushroom& m) { return m.isCollected(); }), lvlMushrooms.end());
 
     // Aktualizacja napisu z punktacją (odświeżana co klatkę)
     starText.setString("Gwiazdki: " + std::to_string(player->getScore()));
@@ -213,6 +260,10 @@ StateAction PlayState::update(sf::Time dt)
     {
         isGameOver = true;
     }
+    if (!player->isAlive() || player->getPosition().y > 750.f)
+    {
+        isGameOver = true;
+    }
 
     return StateAction::Keep;
 }
@@ -233,15 +284,28 @@ void PlayState::render(sf::RenderWindow& window)
     }
 
     if (isPaused) pauseMenu->render(window);
-    if (isGameOver) {
+    if (isGameOver) 
+    {
         gameOverText.setPosition(400.f - gameOverText.getGlobalBounds().width / 2.f, 240.f);
         resetText.setPosition(400.f - resetText.getGlobalBounds().width / 2.f, 320.f);
-        window.draw(gameOverText); window.draw(resetText);
+        window.draw(gameOverText); 
+        window.draw(resetText);
+        //gameOverText.setPosition(camera.getCenter().x - (gameOverText.getGlobalBounds().width / 2.f), camera.getCenter().y - 40.f);
+        //resetText.setPosition(camera.getCenter().x - (resetText.getGlobalBounds().width / 2.f), camera.getCenter().y + 30.f);
+        //window.draw(gameOverText);
+        //window.draw(resetText);
     }
-    else if (isGameWon) {
+    else if (isGameWon) 
+    {
         gameWonText.setPosition(400.f - gameWonText.getGlobalBounds().width / 2.f, 240.f);
         resetText.setPosition(400.f - resetText.getGlobalBounds().width / 2.f, 320.f);
         window.draw(gameWonText); window.draw(resetText);
+
+        //gameWonText.setPosition(camera.getCenter().x - (gameWonText.getGlobalBounds().width / 2.f), camera.getCenter().y - 40.f);
+        //resetText.setPosition(camera.getCenter().x - (resetText.getGlobalBounds().width / 2.f), camera.getCenter().y + 30.f);
+        
+        //window.draw(gameWonText);
+        //window.draw(resetText);
     }
     window.draw(starText);
 }

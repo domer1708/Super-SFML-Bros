@@ -26,16 +26,21 @@ PauseMenu::PauseMenu(sf::Font& f) : font(f), selectedIndex(0)
     }
 }
 
-void PauseMenu::handleInput(sf::Keyboard::Key key) {
-    if (key == sf::Keyboard::W || key == sf::Keyboard::Up) {
-        if (selectedIndex > 0) {
+void PauseMenu::handleInput(sf::Keyboard::Key key) 
+{
+    if (key == sf::Keyboard::W || key == sf::Keyboard::Up) 
+    {
+        if (selectedIndex > 0) 
+        {
             menuItems[selectedIndex].setFillColor(sf::Color::White);
             selectedIndex--;
             menuItems[selectedIndex].setFillColor(sf::Color::Yellow);
         }
     }
-    else if (key == sf::Keyboard::S || key == sf::Keyboard::Down) {
-        if (selectedIndex < 3) {
+    else if (key == sf::Keyboard::S || key == sf::Keyboard::Down) 
+    {
+        if (selectedIndex < 3) 
+        {
             menuItems[selectedIndex].setFillColor(sf::Color::White);
             selectedIndex++;
             menuItems[selectedIndex].setFillColor(sf::Color::Yellow);
@@ -43,18 +48,22 @@ void PauseMenu::handleInput(sf::Keyboard::Key key) {
     }
 }
 
-int PauseMenu::getSelectedIndex() const {
+int PauseMenu::getSelectedIndex() const 
+{
     return selectedIndex;
 }
 
-void PauseMenu::render(sf::RenderWindow& window) {
+void PauseMenu::render(sf::RenderWindow& window) 
+{
     window.draw(dimScreen);
     window.draw(frame); // Rysujemy ramkę
-    for (auto& item : menuItems) {
+    for (auto& item : menuItems) 
+    {
         window.draw(item);
     }
 }
 
-void PauseMenu::setItemText(int index, std::string text) {
+void PauseMenu::setItemText(int index, std::string text) 
+{
     menuItems[index].setString(text);
 }

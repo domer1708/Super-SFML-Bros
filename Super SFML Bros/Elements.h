@@ -44,3 +44,17 @@ public:
     void render(sf::RenderWindow& window);
     sf::FloatRect getBounds() const;
 };
+// --- KLASA GRZYBKA SUPER MOCY ---
+class Mushroom
+{
+private:
+    sf::RectangleShape shape;
+    bool collected;
+
+public:
+    Mushroom(float x, float y);
+    void render(sf::RenderWindow& window);
+    sf::FloatRect getBounds() const;
+    void collect();
+    bool isCollected() const;
+};

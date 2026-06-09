@@ -7,6 +7,7 @@ bool Level::loadFromFile(const std::string& filename)
     traps.clear();
     portals.clear();
     enemies.clear(); 
+    mushrooms.clear();
 
     playerSpawnPosition = sf::Vector2f(100.f, 100.f);
 
@@ -53,6 +54,11 @@ bool Level::loadFromFile(const std::string& filename)
             {
                 enemies.push_back(Enemy(x * tile_size, y * tile_size));
             }
+            else if (tile == 'M')
+            {
+                mushrooms.push_back(Mushroom(x * tile_size, y * tile_size));
+            }
+
         }
         y++;
     }
@@ -84,6 +90,11 @@ void Level::render(sf::RenderWindow& window)
     {
         star.render(window);
     }
+    for (auto& mushroom : mushrooms) 
+    { 
+        mushroom.render(window); 
+    }
+
 }
 
 std::vector<Star>& Level::getStars() 
