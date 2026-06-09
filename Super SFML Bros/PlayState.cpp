@@ -101,7 +101,8 @@ bool PlayState::loadGame() {
         if (pauseMenu) pauseMenu->setItemText(2, "WCZYTANO!");
         return true;
     }
-    else {
+    else 
+    {
         if (pauseMenu) pauseMenu->setItemText(2, "BRAK ZAPISU!");
         return false;
     }

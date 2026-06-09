@@ -25,6 +25,11 @@ private:
 	sf::Color baseColor;
 	int score;
 	bool hasSuperPower;
+	// --- NOWE ZMIENNE DO FIZYKI RUCHU ---
+    float acceleration = 1500.f;  // Jak szybko gracz przyspiesza
+    float maxSpeed = 350.f;      // Maksymalna prędkość biegu
+    float friction = 8.f;
+
 
 public:
 	Player();

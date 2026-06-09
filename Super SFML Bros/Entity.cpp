@@ -52,7 +52,7 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
 		shape.setFillColor(baseColor); // Wracamy do zapamiętanego koloru!
 	}
 
-	float playerSpeed = 300.f;
+	/*float playerSpeed = 300.f;
 	float gravity = 1000.f;
 	velocity.x = 0.f;
 
@@ -63,7 +63,44 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 	{
 		velocity.x -= playerSpeed;
-	}
+	}*/
+    // --- NOWY SYSTEM ROZPĘDU I ŚLIZGANIA ---
+    float gravity = 1000.f;
+    float dtSeconds = dt.asSeconds();
+
+    // 1. Zbieranie kierunku ruchu
+    float directionX = 0.f;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+    {
+        directionX += 1.f;
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+    {
+        directionX -= 1.f;
+    }
+
+    // 2. Płynne przyspieszanie lub hamowanie
+    if (directionX != 0.f)
+    {
+        // Gracz naciska klawisz -> przyspieszamy
+        velocity.x += directionX * acceleration * dtSeconds;
+        
+        // Blokada maksymalnej prędkości (maxSpeed = 350.f)
+        if (velocity.x > maxSpeed)  velocity.x = maxSpeed;
+        if (velocity.x < -maxSpeed) velocity.x = -maxSpeed;
+    }
+    else
+    {
+        // Gracz puścił klawisze -> tarcie (friction = 8.f) robi ślizg
+        velocity.x -= velocity.x * friction * dtSeconds;
+
+        // Jeśli prędkość spadnie blisko zera, zatrzymujemy całkowicie
+        if (std::abs(velocity.x) < 10.f)
+        {
+            velocity.x = 0.f;
+        }
+    }
+    // ----------------------------------------
 
 	position.x += velocity.x * dt.asSeconds();
 	shape.setPosition(position);
