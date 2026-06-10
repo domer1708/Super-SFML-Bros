@@ -30,6 +30,7 @@ private:
     float maxSpeed = 350.f;      // Maksymalna prędkość biegu
     float friction = 8.f;
 	int killCombo = 0; // Licznik zabitych potworów bez dotykania ziemi
+	int starsCollected = 0; // licznik gwiazdek
 
 
 public:
@@ -61,5 +62,8 @@ public:
 	void incrementCombo() { killCombo++; }
     void resetCombo() { killCombo = 0; }
     int getCombo() const { return killCombo; }
+	void addStar() { starsCollected++; }
+    int getStarsCount() const { return starsCollected; }
+
 
 };

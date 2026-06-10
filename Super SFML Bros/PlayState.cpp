@@ -230,6 +230,7 @@ StateAction PlayState::update(sf::Time dt)
         {
             star.collect();
             player->addScore(200); // Dodajemy punkt za gwiazdkę!
+            player->addStar();
         }
     }
     for (auto& mushroom : currentLevel.getMushrooms())
@@ -246,7 +247,7 @@ StateAction PlayState::update(sf::Time dt)
     lvlMushrooms.erase(std::remove_if(lvlMushrooms.begin(), lvlMushrooms.end(), [](const Mushroom& m) { return m.isCollected(); }), lvlMushrooms.end());
 
     // Aktualizacja napisu z punktacją (odświeżana co klatkę)
-    starText.setString("Gwiazdki: " + std::to_string(player->getScore()));
+    starText.setString("Gwiazdki: " + std::to_string(player->getStarsCount()));
 
     // 4. Pułapki
     for (const auto& trap : currentLevel.getTraps())
