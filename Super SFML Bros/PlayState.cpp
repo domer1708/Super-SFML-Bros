@@ -70,6 +70,13 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
 
     // Menu pauzy
     pauseMenu = std::make_unique<PauseMenu>(font);
+    
+    std::string bgName = "pliki/tlo" + std::to_string(currentLevelNumber) + ".png";
+    if (!backgroundTexture.loadFromFile(bgName))
+    {
+        std::cout << "Blad ladowania pliku " << bgName << "!" << std::endl;
+    }
+    backgroundSprite.setTexture(backgroundTexture);
 }
 
 void PlayState::saveGame() 
