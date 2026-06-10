@@ -1,6 +1,6 @@
 #include "Level.h"
 
-bool Level::loadFromFile(const std::string& filename)
+bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex)
 {
     platforms.clear();
     stars.clear();
@@ -56,7 +56,7 @@ bool Level::loadFromFile(const std::string& filename)
             }
             else if (tile == 'M')
             {
-                mushrooms.push_back(Mushroom(x * tile_size, y * tile_size));
+                mushrooms.push_back(Mushroom(x * tile_size, y * tile_size, mushroomTex));
             }
 
         }

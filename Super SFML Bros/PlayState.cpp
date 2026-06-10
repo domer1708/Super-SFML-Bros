@@ -44,7 +44,10 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     scoreText.setCharacterSize(16);
     scoreText.setFillColor(sf::Color::White); // Biały tekst, ładnie odetnie się od żółtych gwiazdek
     scoreText.setString("Score: 000000");
-
+    if (!mushroomTexture.loadFromFile("pliki/mashroms.png"))
+    {
+        std::cout << "Blad ladowania pliku pliki/mushroom.png!" << std::endl;
+    }
     // Próba wczytania z menu głównego
     bool loaded = false;
     if (loadFromSave) 
@@ -58,7 +61,7 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
         else if (characterIndex == 1) player->setColor(sf::Color::Green);
         else if (characterIndex == 2) player->setColor(sf::Color::Blue);
 
-        currentLevel.loadFromFile("pliki/level1.txt");
+        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture);
         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
     }
 
@@ -99,7 +102,7 @@ bool PlayState::loadGame() {
         else if (charIdx == 1) player->setColor(sf::Color::Green);
         else if (charIdx == 2) player->setColor(sf::Color::Blue);
 
-        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt");
+        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture);
         player->setPosition(px, py);
         isPaused = false;
 
@@ -272,7 +275,7 @@ StateAction PlayState::update(sf::Time dt)
             else
             {
                 std::string nextMap = "pliki/level" + std::to_string(currentLevelNumber) + ".txt";
-                if (currentLevel.loadFromFile(nextMap))
+                if (currentLevel.loadFromFile(nextMap, mushroomTexture))
                 {
                     player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
                 }

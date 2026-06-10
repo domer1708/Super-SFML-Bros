@@ -70,6 +70,7 @@ private:
     int currentCharacterIndex; // Zapamiętujemy kim gramy
     bool isGameWon;
     sf::Text gameWonText;
+	sf::Texture mushroomTexture;
 
     bool isGameOver;
     sf::Font font;

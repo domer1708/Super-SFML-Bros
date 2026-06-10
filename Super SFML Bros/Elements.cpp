@@ -96,19 +96,37 @@ sf::FloatRect Portal::getBounds() const
 {
     return shape.getGlobalBounds();
 }
-Mushroom::Mushroom(float x, float y)
+Mushroom::Mushroom(float x, float y, const sf::Texture& tex)
 {
-    shape.setSize(sf::Vector2f(30.f, 30.f));
-    shape.setFillColor(sf::Color(255, 128, 0)); // Pomarańczowy kolor super mocy
-    shape.setPosition(x + 10.f, y + 20.f);     // Wyśrodkowany na kafelku
     collected = false;
+    sprite.setTexture(tex);
+    float scaleX = 30.f / tex.getSize().x;
+    float scaleY = 30.f / tex.getSize().y;
+    sprite.setScale(scaleX, scaleY);
+
+    // 3. Pozycja – zachowujemy Wasze oryginalne przesunięcie na kafelku
+    sprite.setPosition(x + 10.f, y + 20.f); 
 }
 
 void Mushroom::render(sf::RenderWindow& window)
 {
-    if (!collected) window.draw(shape);
+    if (!collected) 
+    {
+        window.draw(sprite); // Rysujemy sprajta zamiast starego shape
+    }
 }
 
-sf::FloatRect Mushroom::getBounds() const { return shape.getGlobalBounds(); }
-void Mushroom::collect() { collected = true; }
-bool Mushroom::isCollected() const { return collected; }
+sf::FloatRect Mushroom::getBounds() const 
+{ 
+    return sprite.getGlobalBounds(); // Zwraca granice obrazka
+}
+
+void Mushroom::collect() 
+{ 
+    collected = true; 
+}
+
+bool Mushroom::isCollected() const 
+{ 
+    return collected; 
+}

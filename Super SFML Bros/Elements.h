@@ -48,11 +48,11 @@ public:
 class Mushroom
 {
 private:
-    sf::RectangleShape shape;
+    sf::Sprite sprite;
     bool collected;
 
 public:
-    Mushroom(float x, float y);
+    Mushroom(float x, float y, const sf::Texture& tex);
     void render(sf::RenderWindow& window);
     sf::FloatRect getBounds() const;
     void collect();
