@@ -71,6 +71,8 @@ private:
     bool isGameWon;
     sf::Text gameWonText;
 	sf::Texture mushroomTexture;
+    sf::Texture backgroundTexture;
+    sf::Sprite backgroundSprite;
 
     bool isGameOver;
     sf::Font font;
