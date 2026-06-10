@@ -111,6 +111,7 @@ bool PlayState::loadGame() {
 
         currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture);
         player->setPosition(px, py);
+        backgroundTexture.loadFromFile("pliki/tlo" + std::to_string(currentLevelNumber) + ".png");
         isPaused = false;
 
         if (pauseMenu) pauseMenu->setItemText(2, "WCZYTANO!");
@@ -285,6 +286,8 @@ StateAction PlayState::update(sf::Time dt)
                 if (currentLevel.loadFromFile(nextMap, mushroomTexture))
                 {
                     player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
+                    std::string newBg = "pliki/tlo" + std::to_string(currentLevelNumber) + ".png";
+                    backgroundTexture.loadFromFile(newBg);
                 }
             }
         }
@@ -305,6 +308,8 @@ StateAction PlayState::update(sf::Time dt)
 
 void PlayState::render(sf::RenderWindow& window)
 {
+    window.setView(window.getDefaultView());
+    window.draw(backgroundSprite);
     window.setView(camera);
     currentLevel.render(window);
     for (auto& p : currentLevel.getPortals()) p.render(window);
