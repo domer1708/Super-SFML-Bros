@@ -20,6 +20,13 @@ private:
     std::vector<Portal> portals;
     std::vector<Enemy> enemies;
     std::vector<Mushroom> mushrooms;
+    std::vector<Trampoline> trampolines;
+    std::vector<Key> keys;
+    std::vector<Checkpoint> checkpoints;
+    std::vector<VanishingPlatform> vanishingPlatforms;
+    std::vector<MovingPlatform> movingPlatforms;
+    std::vector<Turret> turrets;
+    std::vector<Bullet> bullets;
     sf::Vector2f playerSpawnPosition;      
     static constexpr float tile_size = 50.f;
 
@@ -37,4 +44,14 @@ public:
     std::vector<Portal>& getPortals();
     std::vector<Enemy>& getEnemies();
     std::vector<Mushroom>& getMushrooms() { return mushrooms; }
+    const std::vector<Trampoline>& getTrampolines() const { return trampolines; }
+    std::vector<Key>& getKeys() { return keys; }
+    void removeCollectedKeys();
+    std::vector<Checkpoint>& getCheckpoints() { return checkpoints; }
+    std::vector<VanishingPlatform>& getVanishingPlatforms() { return vanishingPlatforms; }
+    std::vector<MovingPlatform>& getMovingPlatforms() { return movingPlatforms; }
+    std::vector<Turret>& getTurrets() { return turrets; }
+    std::vector<Bullet>& getBullets() { return bullets; }
+    void spawnBullet(float x, float y) { bullets.push_back(Bullet(x, y)); }
+    void updateLevelElements(sf::Time dt);
 };

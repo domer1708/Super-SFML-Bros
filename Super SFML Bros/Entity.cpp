@@ -6,12 +6,17 @@ Player::Player()
 	isJumping = false;
 	hasSuperPower = false;
 	velocity = sf::Vector2f(0.f, 0.f);
-
 	hp = 3;
 	score = 0;
-	invincibilityTimer = sf::Time::Zero;
+	starsCollected = 0;
+	killCombo = 0;
+	hasKeyVar = false;
+	hasActiveCheckpoint = false;
+	checkpointPosition = sf::Vector2f(0.f, 0.f);
+	// ---------------------------------------------------------
 
-	baseColor = sf::Color::Red;      // Zapisujemy domyślny kolor na starcie
+	invincibilityTimer = sf::Time::Zero;
+	baseColor = sf::Color::Red;
 	shape.setFillColor(baseColor);
 	shape.setSize(sf::Vector2f(50.f, 50.f));
 }
@@ -189,4 +194,23 @@ void Player::bounce()
 {
 	velocity.y = -600.f;
 	isJumping = true;
+}
+
+void Player::setSuper(bool status)
+{
+	hasSuperPower = status;
+	if (status) setColor(sf::Color(255, 215, 0)); // Złoty kolor gdy ma moc!
+	else setColor(sf::Color::Red); // Powrót do czerwonego (domyślny)
+}
+
+void Player::superBounce()
+{
+	velocity.y = -1100.f; // Super wybicie w górę!
+	isJumping = true;
+}
+
+void Player::setCheckpoint(sf::Vector2f pos)
+{
+	checkpointPosition = pos;
+	hasActiveCheckpoint = true;
 }

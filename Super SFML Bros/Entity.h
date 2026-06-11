@@ -31,7 +31,9 @@ private:
     float friction = 8.f;
 	int killCombo = 0; // Licznik zabitych potworów bez dotykania ziemi
 	int starsCollected = 0; // licznik gwiazdek
-
+	bool hasKeyVar;
+	sf::Vector2f checkpointPosition;
+	bool hasActiveCheckpoint;
 
 public:
 	Player();
@@ -53,17 +55,21 @@ public:
 	void addScore(int points) { score += points; }
 	void setScore(int s) { score = s; }
 	bool isSuper() const { return hasSuperPower; }
-    void setSuper(bool status) 
-	{ 
-        hasSuperPower = status; 
-		if(status) setColor(sf::Color(255, 215, 0)); // Złoty kolor gdy ma moc!
-    	else setColor(sf::Color::Red); // Powrót do czerwonego (domyślny)
-    }
+	void setSuper(bool status);
 	void incrementCombo() { killCombo++; }
     void resetCombo() { killCombo = 0; }
     int getCombo() const { return killCombo; }
 	void addStar() { starsCollected++; }
     int getStarsCount() const { return starsCollected; }
-
-
+	void setStarsCount(int stars) { starsCollected = stars; }
+	bool hasKey() const { return hasKeyVar; }
+	void collectKey() { hasKeyVar = true; }
+	void useKey() { hasKeyVar = false; }
+	void setKey(bool k) { hasKeyVar = k; }
+	void superBounce(); // Skok z trampoliny
+	bool hasCheckpoint() const { return hasActiveCheckpoint; }
+	sf::Vector2f getCheckpointPos() const { return checkpointPosition; }
+	void setCheckpoint(sf::Vector2f pos);
+	void resetCheckpoint() { hasActiveCheckpoint = false; }
+	void resetVelocity() { velocity = sf::Vector2f(0.f, 0.f); }
 };

@@ -84,6 +84,7 @@ private:
     // Logika pauzy
     std::unique_ptr<PauseMenu> pauseMenu;
     bool isPaused;
+    sf::Text keyText;
 
     void saveGame();
     bool loadGame();
