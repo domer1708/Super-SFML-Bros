@@ -39,13 +39,10 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
                 sf::RectangleShape block;
                 block.setSize(sf::Vector2f(tile_size, tile_size));
 
-                // --- NAPRAWA TEKSTURY PODŁOGI ---
-                block.setFillColor(sf::Color::White); // Musi być biały, żeby tekstura nie złapała dziwnego odcienia
-                block.setTexture(&groundTex);         // Wskazujemy na wczytaną teksturę ziemi
-
-                // USUNIĘTO setTextureRect! Teraz SFML idealnie rozciągnie/ściśnie Twoją grafikę do klocka 50x50.
-
+                block.setFillColor(sf::Color::White); // Wymuszenie neutralnego podkładu 
+                block.setTexture(&groundTex);         // Nadanie tekstury
                 block.setPosition(x * tile_size, y * tile_size);
+
                 platforms.push_back(block);
             }
             else if (tile == 'P') playerSpawnPosition = sf::Vector2f(x * tile_size, y * tile_size);
@@ -64,7 +61,7 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
             {
                 sf::RectangleShape ice;
                 ice.setSize(sf::Vector2f(tile_size, tile_size));
-                ice.setFillColor(sf::Color(150, 255, 255)); // Lód - jasnoniebieski
+                ice.setFillColor(sf::Color(150, 255, 255)); // Lód
                 ice.setPosition(x * tile_size, y * tile_size);
                 iceBlocks.push_back(ice);
             }

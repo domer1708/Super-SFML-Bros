@@ -38,7 +38,7 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     starText.setFont(font);
     starText.setCharacterSize(24);
     starText.setFillColor(sf::Color::Yellow);
-    starText.setPosition(420.f, 20.f); // Prawy górny róg
+    starText.setPosition(420.f, 20.f);
     starText.setString("Gwiazdki: 0");
 
     // --- HUD PUNKTÓW (SCORE) ---
@@ -47,17 +47,34 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     scoreText.setFillColor(sf::Color::White);
     scoreText.setString("Score: 000000");
 
-    if (!mushroomTexture.loadFromFile("pliki/masrums.png"))
+    // =======================================================
+    // --- NAPRAWA BIAŁEGO TŁA W TEKSTURACH ---
+    // =======================================================
+    sf::Image mushroomImage;
+    if (mushroomImage.loadFromFile("pliki/masrums.png"))
     {
-        std::cout << "Blad ladowania pliku pliki/mushroom.png!" << std::endl;
+        // Wymaż kolor biały (zrób przezroczysty)
+        mushroomImage.createMaskFromColor(sf::Color::White);
+        mushroomTexture.loadFromImage(mushroomImage);
+    }
+    else
+    {
+        std::cout << "Blad ladowania pliku pliki/masrums.png!" << std::endl;
     }
 
-    // Podłoga
-    if (!groundTexture.loadFromFile("pliki/ground.png"))
+    sf::Image groundImage;
+    if (groundImage.loadFromFile("pliki/ground.png"))
+    {
+        // Wymaż kolor biały z ziemi
+        groundImage.createMaskFromColor(sf::Color::White);
+        groundTexture.loadFromImage(groundImage);
+        groundTexture.setRepeated(true);
+    }
+    else
     {
         std::cout << "Blad ladowania pliku pliki/ground.png!" << std::endl;
     }
-    groundTexture.setRepeated(true);
+    // =======================================================
 
     // Dźwięk zabijania potwora
     if (stompBuffer.loadFromFile("pliki/stomp.ogg"))
@@ -179,7 +196,6 @@ StateAction PlayState::handleEvent(sf::Event& event)
         if (event.key.code == sf::Keyboard::Escape) {
             if (!isGameOver && !isGameWon) {
                 isPaused = !isPaused;
-                // --- POPRAWKA: RESETOWANIE NAPISU PO OTWARCIU PAUZY ---
                 if (isPaused) {
                     pauseMenu->setItemText(1, "Zapisz Gre");
                 }
@@ -239,14 +255,14 @@ StateAction PlayState::update(sf::Time dt)
     // --- PRZYKLEJANIE DO PLATFORM ---
     // =====================================================================
     sf::FloatRect pBounds = player->getGlobalBounds();
-    bool onMovingPlatform = false; // FLAGA DO SKAKANIA Z PLATFORMY
+    bool onMovingPlatform = false;
 
     for (const auto& mp : currentLevel.getMovingPlatforms()) {
         sf::FloatRect mBounds = mp.getBounds();
         if (pBounds.left + pBounds.width - 4.f > mBounds.left && pBounds.left + 4.f < mBounds.left + mBounds.width) {
             if (std::abs((pBounds.top + pBounds.height) - mBounds.top) < 20.f && player->getVelocity().y >= 0.f) {
                 player->setPosition(player->getPosition().x + mp.getDeltaMovement().x, mBounds.top - pBounds.height - 0.1f);
-                onMovingPlatform = true; // Jesteśmy na ruchomej platformie
+                onMovingPlatform = true;
                 break;
             }
         }
@@ -260,27 +276,26 @@ StateAction PlayState::update(sf::Time dt)
             float playerFootY = pBounds.top + pBounds.height;
             if (std::abs(playerFootY - oldElevatorTop) < 30.f && player->getVelocity().y >= 0.f) {
                 player->setPosition(player->getPosition().x, vBounds.top - pBounds.height - 0.1f);
-                onMovingPlatform = true; // Jesteśmy na windzie
+                onMovingPlatform = true;
                 break;
             }
         }
     }
     // =====================================================================
 
-    // Fizyka i ruch gracza
     player->update(dt, solidBlocks);
 
-    // --- NAPRAWA SKOKU NA WINDACH ---
     if (onMovingPlatform) {
-        player->resetJumping(); // Wymuszamy możliwość skoku
+        player->resetJumping();
     }
 
     // --- ZNIKAJĄCE PLATFORMY ---
-    sf::FloatRect playerFeet = player->getGlobalBounds();
-    playerFeet.height += 2.f;
+    // (Zmieniono nazwę na vanishFeet, by uniknąć problemu z kompilacją!)
+    sf::FloatRect vanishFeet = player->getGlobalBounds();
+    vanishFeet.height += 2.f;
 
     for (auto& vp : currentLevel.getVanishingPlatforms()) {
-        if (vp.isSolid() && playerFeet.intersects(vp.getBounds())) {
+        if (vp.isSolid() && vanishFeet.intersects(vp.getBounds())) {
             if (player->getVelocity().y >= 0) vp.trigger();
         }
     }
@@ -403,6 +418,7 @@ StateAction PlayState::update(sf::Time dt)
                 if (currentLevelNumber > 3) isGameWon = true;
                 else {
                     std::string nextMap = "pliki/level" + std::to_string(currentLevelNumber) + ".txt";
+
                     if (currentLevel.loadFromFile(nextMap, mushroomTexture, groundTexture)) {
                         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
                         player->resetCheckpoint();
