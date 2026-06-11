@@ -34,18 +34,13 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     resetText.setCharacterSize(20);
     resetText.setFillColor(sf::Color::White);
 
-    // --- HUD GWIAZDEK ---
-    starText.setFont(font);
-    starText.setCharacterSize(24);
-    starText.setFillColor(sf::Color::Yellow);
-    starText.setPosition(420.f, 20.f);
-    starText.setString("Gwiazdki: 0");
-
     // --- HUD PUNKTÓW (SCORE) ---
     scoreText.setFont(font);
-    scoreText.setCharacterSize(16);
-    scoreText.setFillColor(sf::Color::White);
-    scoreText.setString("Score: 000000");
+    scoreText.setCharacterSize(24);
+    scoreText.setFillColor(sf::Color::Yellow); // Złoto-żółty kolor
+    scoreText.setOutlineColor(sf::Color::Black); // Czarna obwódka dla super czytelności
+    scoreText.setOutlineThickness(3.f); // Grubość obwódki
+    scoreText.setString("Score: 0");
 
     // =======================================================
     // --- NAPRAWA BIAŁEGO TŁA W TEKSTURACH ---
@@ -53,7 +48,6 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     sf::Image mushroomImage;
     if (mushroomImage.loadFromFile("pliki/masrums.png"))
     {
-        // Wymaż kolor biały (zrób przezroczysty)
         mushroomImage.createMaskFromColor(sf::Color::White);
         mushroomTexture.loadFromImage(mushroomImage);
     }
@@ -65,7 +59,6 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     sf::Image groundImage;
     if (groundImage.loadFromFile("pliki/ground.png"))
     {
-        // Wymaż kolor biały z ziemi
         groundImage.createMaskFromColor(sf::Color::White);
         groundTexture.loadFromImage(groundImage);
         groundTexture.setRepeated(true);
@@ -76,32 +69,18 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     }
     // =======================================================
 
-    // Dźwięk zabijania potwora
+    // Dźwięki
     if (stompBuffer.loadFromFile("pliki/stomp.ogg"))
     {
         stompSound.setBuffer(stompBuffer);
         stompSound.setVolume(75.f);
     }
-    else
-    {
-        std::cout << "Blad: Nie udalo sie wczytac pliki/stomp.ogg!" << std::endl;
-    }
 
-    // Dźwięk zjadania grzybów 
     if (powerupBuffer.loadFromFile("pliki/powerup.ogg"))
     {
         powerupSound.setBuffer(powerupBuffer);
         powerupSound.setVolume(60.f);
     }
-    else
-    {
-        std::cout << "Blad: Nie udalo sie wczytac pliki/powerup.ogg!" << std::endl;
-    }
-
-    keyText.setFont(font);
-    keyText.setCharacterSize(16);
-    keyText.setFillColor(sf::Color(255, 215, 0));
-    keyText.setPosition(650.f, 60.f);
 
     bool loaded = false;
     if (loadFromSave)
@@ -175,21 +154,16 @@ bool PlayState::loadGame() {
         else if (charIdx == 1) player->setColor(sf::Color::Green);
         else if (charIdx == 2) player->setColor(sf::Color::Blue);
 
-        // Ładujemy mapę od nowa
         currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture);
 
-        // --- POPRAWKA: WIZUALNA REAKTYWACJA CHECKPOINTU PO WCZYTANIU ---
         if (hasCheck) {
             for (auto& c : currentLevel.getCheckpoints()) {
-                // Jeśli pozycja checkpointu na mapie zgadza się z wczytaną pozycją cx
                 if (std::abs(c.getBounds().left - cx) < 10.f) {
-                    c.activate(); // Zaświeć flagę na niebiesko!
+                    c.activate();
                 }
             }
         }
-        // ---------------------------------------------------------------
 
-        // Stan Bossa
         if (!currentLevel.getBosses().empty()) {
             if (bossHp <= 0) currentLevel.getBosses().clear();
             else currentLevel.getBosses()[0].setHp(bossHp);
@@ -236,6 +210,13 @@ StateAction PlayState::handleEvent(sf::Event& event)
 StateAction PlayState::update(sf::Time dt)
 {
     if (isGameOver || isGameWon || isPaused) return StateAction::Keep;
+
+    // --- ZABEZPIECZENIE PRZED LAGIEM (TUNELOWANIEM) NA STARCIE ---
+    // Jeśli komputer zamrozi się na ładowaniu (np. dt > 0.05 sekundy),
+    // ucinamy czas, aby gracz nie spadł pod podłogę z wielką prędkością.
+    if (dt.asSeconds() > 0.05f) {
+        dt = sf::seconds(0.05f);
+    }
 
     // 0. Aktualizacja wewnętrzna poziomu
     currentLevel.updateLevelElements(dt);
@@ -303,7 +284,6 @@ StateAction PlayState::update(sf::Time dt)
     }
 
     // --- ZNIKAJĄCE PLATFORMY ---
-    // (Zmieniono nazwę na vanishFeet, by uniknąć problemu z kompilacją!)
     sf::FloatRect vanishFeet = player->getGlobalBounds();
     vanishFeet.height += 2.f;
 
@@ -390,7 +370,6 @@ StateAction PlayState::update(sf::Time dt)
             star.collect(); player->addScore(200); player->addStar();
         }
     }
-    starText.setString("Gwiazdki: " + std::to_string(player->getStarsCount()));
 
     for (auto& mushroom : currentLevel.getMushrooms()) {
         if (!mushroom.isCollected() && player->getGlobalBounds().intersects(mushroom.getBounds()))
@@ -484,8 +463,9 @@ void PlayState::render(sf::RenderWindow& window)
         window.draw(heartShape);
     }
 
+    // --- SCORE WYZŚRODKOWANE I POGRUBIONE ---
     scoreText.setString("Score: " + std::to_string(player->getScore()));
-    scoreText.setPosition(300.f - scoreText.getGlobalBounds().width / 2.f, 25.f);
+    scoreText.setPosition(400.f - scoreText.getGlobalBounds().width / 2.f, 20.f);
     window.draw(scoreText);
 
     if (isPaused) pauseMenu->render(window);
@@ -502,7 +482,4 @@ void PlayState::render(sf::RenderWindow& window)
         resetText.setPosition(400.f - resetText.getGlobalBounds().width / 2.f, 320.f);
         window.draw(gameWonText); window.draw(resetText);
     }
-    window.draw(starText);
-    keyText.setString(player->hasKey() ? "Klucz: TAK" : "Klucz: NIE");
-    window.draw(keyText);
 }
