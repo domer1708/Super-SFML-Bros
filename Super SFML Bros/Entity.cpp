@@ -22,34 +22,28 @@ Player::Player()
     shape.setFillColor(sf::Color::Transparent);
     shape.setSize(sf::Vector2f(50.f, 50.f));
 
-    // --- ŁADOWANIE GRAFIKI MARIO ---
-    // --- ŁADOWANIE OSOBNYCH KLATEK ---
-    // Ładujemy pliki (zakładam, że mają białe tło, które trzeba usunąć)
+    // --- ŁADOWANIE OSOBNYCH KLATEK ANIMACJI ---
     sf::Image imgStand, imgW1, imgW2, imgW3, imgJump;
     
-    if (imgStand.loadFromFile("pliki/stand.png")) { imgStand.createMaskFromColor(sf::Color::White); texStand.loadFromImage(imgStand); }
-    if (imgW1.loadFromFile("pliki/walk1.png")) { imgW1.createMaskFromColor(sf::Color::White); texWalk1.loadFromImage(imgW1); }
-    if (imgW2.loadFromFile("pliki/walk2.png")) { imgW2.createMaskFromColor(sf::Color::White); texWalk2.loadFromImage(imgW2); }
-    if (imgW3.loadFromFile("pliki/walk3.png")) { imgW3.createMaskFromColor(sf::Color::White); texWalk3.loadFromImage(imgW3); }
-    if (imgJump.loadFromFile("pliki/jump.png")) { imgJump.createMaskFromColor(sf::Color::White); texJump.loadFromImage(imgJump); }
+    // Funkcja pomocnicza lambda (skraca kod i dba o to samo dla każdego pliku)
+    auto loadTexture = [](sf::Image& img, sf::Texture& tex, const std::string& path) {
+        if (img.loadFromFile(path)) {
+            img.createMaskFromColor(sf::Color::White); // Usunięcie białego tła
+            tex.loadFromImage(img);
+            tex.setSmooth(false); // Wyłączamy rozmywanie pikseli (niezwykle ważne w pixel-arcie!)
+        } else {
+            std::cout << "Blad: Nie udalo sie zaladowac " << path << std::endl;
+        }
+    };
+
+    loadTexture(imgStand, texStand, "pliki/mario_stand.png");
+    loadTexture(imgW1, texWalk1, "pliki/mario_walk1.png");
+    loadTexture(imgW2, texWalk2, "pliki/mario_walk2.png");
+    loadTexture(imgW3, texWalk3, "pliki/mario_walk3.png");
+    loadTexture(imgJump, texJump, "pliki/marioj_jump.png");
 
     // Ustawiamy domyślną teksturę na stanie
     sprite.setTexture(texStand);
-    {
-        image.createMaskFromColor(sf::Color::White);
-
-        texture.loadFromImage(image);
-
-        // Wyłączamy rozmywanie pikseli (niezwykle ważne w pixel-arcie!)
-        texture.setSmooth(false);
-
-        sprite.setTexture(texture);
-    }
-    else
-    {
-        std::cout << "Blad: Nie udalo sie zaladowac pliki/mario.png" << std::endl;
-        shape.setFillColor(sf::Color::Magenta);
-    }
 
     animationFrame = 0;
     isFacingRight = true;
@@ -82,17 +76,19 @@ void Player::handleEvent(sf::Event& event)
 
 void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platforms)
 {
+    // --- SYSTEM NIEŚMIERTELNOŚCI I MIGANIA ---
     if (invincibilityTimer > sf::Time::Zero)
     {
         invincibilityTimer -= dt;
         if (static_cast<int>(invincibilityTimer.asMilliseconds() / 100) % 2 == 0)
             sprite.setColor(sf::Color(255, 255, 255, 100));
         else
-            sprite.setColor(sf::Color::White);
+            sprite.setColor(baseColor);
     }
     else
     {
-        sprite.setColor(sf::Color::White);
+        if(hasSuperPower) sprite.setColor(sf::Color(255, 215, 0));
+        else sprite.setColor(baseColor);
     }
 
     float gravity = 1000.f;
@@ -157,20 +153,12 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
 
 
     // =========================================================================
-    // RĘCZNE WYCINANIE KLATEK (X_START, Y_START, SZEROKOŚĆ, WYSOKOŚĆ)
-    // Zmierzone z trzeciego rzędu obrazka mario.png
+    // PROSTA ANIMACJA - ZMIANA TEKSTUR
     // =========================================================================
-    sf::IntRect frameStand(16, 218, 48, 80);
-    sf::IntRect frameWalk1(82, 218, 48, 80);
-    sf::IntRect frameWalk2(148, 218, 48, 80);
-    sf::IntRect frameWalk3(214, 218, 48, 80);
-    sf::IntRect frameJump(395, 218, 54, 80);
-
-    sf::IntRect currentFrame;
-
     if (isJumping || std::abs(velocity.y) > 50.f)
     {
-        currentFrame = frameJump;
+        // true na końcu resetuje TextureRect, żeby dopasować się do rozmiaru nowego pliku
+        sprite.setTexture(texJump, true); 
     }
     else if (std::abs(velocity.x) > 10.f)
     {
@@ -178,31 +166,34 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
             animationFrame = (animationFrame + 1) % 3;
             animationClock.restart();
         }
-        if (animationFrame == 0) currentFrame = frameWalk1;
-        else if (animationFrame == 1) currentFrame = frameWalk2;
-        else currentFrame = frameWalk3;
+        if (animationFrame == 0) sprite.setTexture(texWalk1, true);
+        else if (animationFrame == 1) sprite.setTexture(texWalk2, true);
+        else sprite.setTexture(texWalk3, true);
     }
     else
     {
-        currentFrame = frameStand;
+        sprite.setTexture(texStand, true);
     }
 
-    // Ustaw wyciętą klatkę
-    sprite.setTextureRect(currentFrame);
-
-    // --- SKALOWANIE PROPORCJONALNE ---
-    float scaleFactor = 60.f / static_cast<float>(currentFrame.height);
-
-    if (!isFacingRight)
+    // --- SKALOWANIE I OBRACANIE ---
+    // Pobieramy rozmiar aktualnie ustawionej tekstury z pliku
+    sf::Vector2u currentTexSize = sprite.getTexture()->getSize();
+    
+    // Zabezpieczenie przed błędem, gdyby tekstura nie wczytała się poprawnie (dzielenie przez zero)
+    if (currentTexSize.y > 0) 
     {
-        sprite.setScale(-scaleFactor, scaleFactor);
-        // Wyciszony błąd C4244 dzięki rzutowaniu static_cast
-        sprite.setOrigin(static_cast<float>(currentFrame.width), 0.f);
-    }
-    else
-    {
-        sprite.setScale(scaleFactor, scaleFactor);
-        sprite.setOrigin(0.f, 0.f);
+        float scaleFactor = 60.f / static_cast<float>(currentTexSize.y); // Mario ma 60px wysokości
+
+        if (!isFacingRight)
+        {
+            sprite.setScale(-scaleFactor, scaleFactor);
+            sprite.setOrigin(static_cast<float>(currentTexSize.x), 0.f);
+        }
+        else
+        {
+            sprite.setScale(scaleFactor, scaleFactor);
+            sprite.setOrigin(0.f, 0.f);
+        }
     }
 }
 
@@ -221,8 +212,8 @@ sf::Vector2f Player::getPosition() const { return position; }
 
 void Player::setColor(sf::Color color)
 {
-    baseColor = sf::Color::White;
-    sprite.setColor(baseColor);
+    baseColor = color; // NAPRAWIONE: Zapisuje w pamięci wybrany kolor (np. zielony dla Luigiego)
+    if(!hasSuperPower) sprite.setColor(baseColor);
 }
 
 void Player::takeDamage(int damage)
@@ -249,7 +240,7 @@ void Player::setSuper(bool status)
 {
     hasSuperPower = status;
     if (status) sprite.setColor(sf::Color(255, 215, 0));
-    else sprite.setColor(sf::Color::White);
+    else sprite.setColor(baseColor); // Gdy traci moc, wraca do oryginalnego koloru (np. Zielonego)
 }
 
 void Player::superBounce()
