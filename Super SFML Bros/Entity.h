@@ -72,4 +72,6 @@ public:
 	void setCheckpoint(sf::Vector2f pos);
 	void resetCheckpoint() { hasActiveCheckpoint = false; }
 	void resetVelocity() { velocity = sf::Vector2f(0.f, 0.f); }
+	void setFriction(float f) { friction = f; }
+	float getFriction() const { return friction; }
 };

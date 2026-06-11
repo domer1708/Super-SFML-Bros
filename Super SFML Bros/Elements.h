@@ -159,3 +159,21 @@ public:
     sf::RectangleShape getShape() const { return shape; }
     sf::Vector2f getDeltaMovement() const { return deltaMovement; }
 };
+
+// --- WINDA (PIONOWA PLATFORMA) ---
+class Elevator {
+private:
+    sf::RectangleShape shape;
+    sf::Vector2f startPos;
+    sf::Vector2f deltaMovement; // O ile przesunęła się w klatce (dla gracza)
+    float timeAccumulator;
+    float speed;
+    float range;
+public:
+    Elevator(float x, float y);
+    void update(sf::Time dt);
+    void render(sf::RenderWindow& window);
+    sf::FloatRect getBounds() const;
+    sf::RectangleShape getShape() const { return shape; }
+    sf::Vector2f getDeltaMovement() const { return deltaMovement; }
+};

@@ -262,3 +262,28 @@ void MovingPlatform::update(sf::Time dt) {
 }
 void MovingPlatform::render(sf::RenderWindow& window) { window.draw(shape); }
 sf::FloatRect MovingPlatform::getBounds() const { return shape.getGlobalBounds(); }
+
+// --- WINDA (PIONOWA PLATFORMA) ---
+Elevator::Elevator(float x, float y) {
+    shape.setSize(sf::Vector2f(100.f, 30.f));
+    shape.setFillColor(sf::Color(139, 69, 19)); // Brązowy kolor drewna
+    shape.setPosition(x, y);
+    startPos = sf::Vector2f(x, y);
+    timeAccumulator = 0.f;
+    speed = 1.5f;     // Prędkość poruszania się
+    range = 200.f;    // Zasięg góra/dół
+}
+
+void Elevator::update(sf::Time dt) {
+    timeAccumulator += dt.asSeconds();
+    sf::Vector2f oldPos = shape.getPosition();
+
+    // Ruch w pionie (funkcja sinus)
+    float newY = startPos.y + std::sin(timeAccumulator * speed) * range;
+    shape.setPosition(startPos.x, newY);
+
+    deltaMovement = shape.getPosition() - oldPos;
+}
+
+void Elevator::render(sf::RenderWindow& window) { window.draw(shape); }
+sf::FloatRect Elevator::getBounds() const { return shape.getGlobalBounds(); }

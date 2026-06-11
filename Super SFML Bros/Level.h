@@ -27,6 +27,9 @@ private:
     std::vector<MovingPlatform> movingPlatforms;
     std::vector<Turret> turrets;
     std::vector<Bullet> bullets;
+    std::vector<sf::RectangleShape> iceBlocks;
+    std::vector<Elevator> elevators;
+    std::vector<Boss> bosses;
     sf::Vector2f playerSpawnPosition;      
     static constexpr float tile_size = 50.f;
 
@@ -54,4 +57,7 @@ public:
     std::vector<Bullet>& getBullets() { return bullets; }
     void spawnBullet(float x, float y) { bullets.push_back(Bullet(x, y)); }
     void updateLevelElements(sf::Time dt);
+    const std::vector<sf::RectangleShape>& getIceBlocks() const { return iceBlocks; }
+    std::vector<Elevator>& getElevators() { return elevators; }
+    std::vector<Boss>& getBosses() { return bosses; }
 };

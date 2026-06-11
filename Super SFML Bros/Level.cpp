@@ -13,6 +13,9 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
     movingPlatforms.clear();
     turrets.clear();
     bullets.clear();
+    iceBlocks.clear(); 
+    elevators.clear(); 
+    bosses.clear();
 
     playerSpawnPosition = sf::Vector2f(100.f, 100.f);
 
@@ -51,6 +54,16 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
             else if (tile == 'Z') vanishingPlatforms.push_back(VanishingPlatform(x * tile_size, y * tile_size));
             else if (tile == 'R') movingPlatforms.push_back(MovingPlatform(x * tile_size, y * tile_size));
             else if (tile == 'W') turrets.push_back(Turret(x * tile_size, y * tile_size));
+            else if (tile == 'I') 
+            {
+                sf::RectangleShape ice;
+                ice.setSize(sf::Vector2f(tile_size, tile_size));
+                ice.setFillColor(sf::Color(150, 255, 255)); // Lód - jasnoniebieski
+                ice.setPosition(x * tile_size, y * tile_size);
+                iceBlocks.push_back(ice);
+            }
+            else if (tile == 'V') elevators.push_back(Elevator(x * tile_size, y * tile_size));
+            else if (tile == 'B') bosses.push_back(Boss(x * tile_size, y * tile_size));
         }
         y++;
     }
@@ -81,6 +94,9 @@ void Level::render(sf::RenderWindow& window)
     for (auto& mp : movingPlatforms) mp.render(window);
     for (auto& t : turrets) t.render(window);
     for (auto& b : bullets) b.render(window);
+    for (auto& ice : iceBlocks) window.draw(ice);
+    for (auto& v : elevators) v.render(window);
+    for (auto& b : bosses) b.render(window);
 }
 
 std::vector<Star>& Level::getStars() 
@@ -116,6 +132,7 @@ void Level::removeCollectedKeys()
 void Level::updateLevelElements(sf::Time dt) {
     for (auto& vp : vanishingPlatforms) vp.update(dt);
     for (auto& mp : movingPlatforms) mp.update(dt);
+    for (auto& v : elevators) v.update(dt);
 
     // Wieżyczki strzelają
     for (auto& t : turrets) {

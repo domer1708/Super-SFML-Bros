@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <cmath>
 
 PlayState::PlayState(int characterIndex, bool loadFromSave)
 {
@@ -20,17 +21,17 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
 
     // Konfiguracja Napisów (Game Over itp.)
     gameOverText.setFont(font);
-    gameOverText.setString("GAME OVER"); 
-    gameOverText.setCharacterSize(60); 
-    gameOverText.setFillColor(sf::Color::Red); 
+    gameOverText.setString("GAME OVER");
+    gameOverText.setCharacterSize(60);
+    gameOverText.setFillColor(sf::Color::Red);
     gameOverText.setStyle(sf::Text::Bold);
-    gameWonText.setFont(font); 
-    gameWonText.setString("WYGRALES GRE!"); 
-    gameWonText.setCharacterSize(60); 
-    gameWonText.setFillColor(sf::Color::Yellow); 
+    gameWonText.setFont(font);
+    gameWonText.setString("WYGRALES GRE!");
+    gameWonText.setCharacterSize(60);
+    gameWonText.setFillColor(sf::Color::Yellow);
     gameWonText.setStyle(sf::Text::Bold);
-    resetText.setFont(font); resetText.setString("Wcisnij ESC, aby wrocic do menu"); 
-    resetText.setCharacterSize(20); 
+    resetText.setFont(font); resetText.setString("Wcisnij ESC, aby wrocic do menu");
+    resetText.setCharacterSize(20);
     resetText.setFillColor(sf::Color::White);
 
     // --- HUD GWIAZDEK ---
@@ -54,7 +55,7 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     keyText.setPosition(650.f, 60.f);
     // Próba wczytania z menu głównego
     bool loaded = false;
-    if (loadFromSave) 
+    if (loadFromSave)
     {
         loaded = loadGame();
     }
@@ -74,7 +75,7 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
 
     // Menu pauzy
     pauseMenu = std::make_unique<PauseMenu>(font);
-    
+
     std::string bgName = "pliki/tlo" + std::to_string(currentLevelNumber) + ".png";
     if (!backgroundTexture.loadFromFile(bgName))
     {
@@ -90,12 +91,19 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
 void PlayState::saveGame() {
     std::ofstream file("pliki/zapis.txt");
     if (file.is_open()) {
+        int bossHp = 0;
+        if (!currentLevel.getBosses().empty()) {
+            bossHp = currentLevel.getBosses()[0].getHp();
+        }
+
         file << currentLevelNumber << "\n" << currentCharacterIndex << "\n"
             << player->getHp() << "\n" << player->getScore() << "\n"
             << player->getStarsCount() << "\n" << player->hasKey() << "\n"
             << player->hasCheckpoint() << "\n"
-            << player->getCheckpointPos().x << "\n" << player->getCheckpointPos().y << "\n" // CHECKPOINT
-            << player->getPosition().x << "\n" << player->getPosition().y << "\n";
+            << player->getCheckpointPos().x << "\n" << player->getCheckpointPos().y << "\n"
+            << player->getPosition().x << "\n" << player->getPosition().y << "\n"
+            << bossHp << "\n";
+
         file.close();
         if (pauseMenu) pauseMenu->setItemText(1, "ZAPISANO!");
     }
@@ -104,10 +112,11 @@ void PlayState::saveGame() {
 bool PlayState::loadGame() {
     std::ifstream file("pliki/zapis.txt");
     if (file.is_open()) {
-        int lvl, charIdx, hp, score, stars;
+        int lvl, charIdx, hp, score, stars, bossHp;
         bool hasKey, hasCheck;
         float cx, cy, px, py;
-        file >> lvl >> charIdx >> hp >> score >> stars >> hasKey >> hasCheck >> cx >> cy >> px >> py;
+
+        file >> lvl >> charIdx >> hp >> score >> stars >> hasKey >> hasCheck >> cx >> cy >> px >> py >> bossHp;
         file.close();
 
         currentLevelNumber = lvl; currentCharacterIndex = charIdx;
@@ -121,6 +130,12 @@ bool PlayState::loadGame() {
         else if (charIdx == 2) player->setColor(sf::Color::Blue);
 
         currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture);
+
+        if (!currentLevel.getBosses().empty()) {
+            if (bossHp <= 0) currentLevel.getBosses().clear();
+            else currentLevel.getBosses()[0].setHp(bossHp);
+        }
+
         player->setPosition(px, py);
         backgroundTexture.loadFromFile("pliki/tlo" + std::to_string(currentLevelNumber) + ".png");
         isPaused = false;
@@ -158,45 +173,80 @@ StateAction PlayState::update(sf::Time dt)
 {
     if (isGameOver || isGameWon || isPaused) return StateAction::Keep;
 
-    // 0. Aktualizacja wewnętrzna poziomu (ruchome klocki, pociski)
+    // 0. Aktualizacja wewnętrzna poziomu
     currentLevel.updateLevelElements(dt);
 
-    // --- BUDOWANIE AKTUALNEJ LISTY TWARDYCH BLOKÓW ---
     std::vector<sf::RectangleShape> solidBlocks = currentLevel.getPlatforms();
-
-    // Dodajemy zanikające platformy (tylko jeśli są solidne!)
     for (const auto& vp : currentLevel.getVanishingPlatforms()) {
         if (vp.isSolid()) solidBlocks.push_back(vp.getShape());
     }
-    // Dodajemy ruchome platformy jako twarde ściany
     for (const auto& mp : currentLevel.getMovingPlatforms()) {
         solidBlocks.push_back(mp.getShape());
     }
+    for (const auto& ice : currentLevel.getIceBlocks()) solidBlocks.push_back(ice);
+    for (const auto& v : currentLevel.getElevators()) solidBlocks.push_back(v.getShape());
 
-    // 1. Fizyka i ruch gracza
-    player->update(dt, solidBlocks);
+    // --- SYSTEM ŚLISKIEJ PODŁOGI (LÓD) ---
+    sf::FloatRect iceFeet = player->getGlobalBounds();
+    iceFeet.top += 2.f;
+    bool onIce = false;
+    for (const auto& ice : currentLevel.getIceBlocks()) {
+        if (iceFeet.intersects(ice.getGlobalBounds())) {
+            onIce = true;
+            break;
+        }
+    }
+    if (onIce) player->setFriction(0.5f);
+    else player->setFriction(8.f);
 
-    // --- MAGIA: JAZDA NA RUCHOMEJ PLATFORMIE ---
-    // Sprawdzamy czy stopy gracza dotykają góry ruchomej platformy
+
+    // =====================================================================
+    // --- PRZYKLEJANIE DO PLATFORM (ZANIM ZADZIAŁA FIZYKA GRACZA) ---
+    // =====================================================================
     sf::FloatRect pBounds = player->getGlobalBounds();
+
+    // 1. Jazda na platformie poziomej
     for (const auto& mp : currentLevel.getMovingPlatforms()) {
         sf::FloatRect mBounds = mp.getBounds();
-        // Jeśli gracz nakłada się w poziomie i stoi dokładnie na platformie
-        if (pBounds.left + pBounds.width > mBounds.left && pBounds.left < mBounds.left + mBounds.width) {
-            if (std::abs((pBounds.top + pBounds.height) - mBounds.top) < 2.f) {
-                // Przesuwamy gracza o delta platformy!
-                player->setPosition(player->getPosition().x + mp.getDeltaMovement().x, player->getPosition().y);
+
+        // Zawężamy tolerancję bocznego łapania platformy
+        if (pBounds.left + pBounds.width - 4.f > mBounds.left && pBounds.left + 4.f < mBounds.left + mBounds.width) {
+            if (std::abs((pBounds.top + pBounds.height) - mBounds.top) < 20.f && player->getVelocity().y >= 0.f) {
+                // -0.1f niweluje problem kolizji poziomej "widmo"
+                player->setPosition(player->getPosition().x + mp.getDeltaMovement().x, mBounds.top - pBounds.height - 0.1f);
+                break;
             }
         }
     }
 
+    // 2. Jazda na windzie (pionowej)
+    pBounds = player->getGlobalBounds();
+    for (const auto& v : currentLevel.getElevators()) {
+        sf::FloatRect vBounds = v.getBounds();
+
+        if (pBounds.left + pBounds.width - 4.f > vBounds.left && pBounds.left + 4.f < vBounds.left + vBounds.width) {
+            float oldElevatorTop = vBounds.top - v.getDeltaMovement().y;
+            float playerFootY = pBounds.top + pBounds.height;
+
+            // Zwiększona tolerancja pionowa na wypadek spadku klatek (30.f)
+            if (std::abs(playerFootY - oldElevatorTop) < 30.f && player->getVelocity().y >= 0.f) {
+                // -0.1f niweluje problem kolizji poziomej "widmo" na łączeniach wind!
+                player->setPosition(player->getPosition().x, vBounds.top - pBounds.height - 0.1f);
+                break;
+            }
+        }
+    }
+    // =====================================================================
+
+    // 1. Fizyka i ruch gracza
+    player->update(dt, solidBlocks);
+
     // --- LOGIKA AKTYWACJI ZANIKANIA ---
     sf::FloatRect playerFeet = player->getGlobalBounds();
-    playerFeet.height += 2.f; // Wydłużamy wirtualnie stopy gracza o 2 piksele!
+    playerFeet.height += 2.f;
 
     for (auto& vp : currentLevel.getVanishingPlatforms()) {
         if (vp.isSolid() && playerFeet.intersects(vp.getBounds())) {
-            // Jeśli gracz stoi na niej (opada), aktywujemy odliczanie
             if (player->getVelocity().y >= 0) vp.trigger();
         }
     }
@@ -244,7 +294,32 @@ StateAction PlayState::update(sf::Time dt)
     }
     levelEnemies.erase(std::remove_if(levelEnemies.begin(), levelEnemies.end(), [](const Enemy& e) { return !e.isAlive(); }), levelEnemies.end());
 
-    // --- STARA LOGIKA ZNAJDŹKÓW (Gwiazdki, Grzybki, Pułapki) ---
+    // --- LOGIKA BOSSA ---
+    auto& levelBosses = currentLevel.getBosses();
+    for (auto& boss : levelBosses) {
+        if (!boss.isAlive()) continue;
+
+        boss.updateBoss(dt, solidBlocks, player->getPosition());
+
+        if (player->getGlobalBounds().intersects(boss.getGlobalBounds())) {
+            if (player->getVelocity().y > 0 && player->getGlobalBounds().top + player->getGlobalBounds().height < boss.getGlobalBounds().top + 20.f) {
+                boss.takeDamage();
+                player->bounce();
+                player->addScore(300);
+                if (!boss.isAlive()) {
+                    player->addScore(2000);
+                    // BARDZO WAŻNE: Boss po śmierci wyrzuca klucz!
+                    currentLevel.getKeys().push_back(Key(boss.getGlobalBounds().left, boss.getGlobalBounds().top));
+                }
+            }
+            else {
+                player->takeDamage(1);
+            }
+        }
+    }
+    levelBosses.erase(std::remove_if(levelBosses.begin(), levelBosses.end(), [](const Boss& b) { return !b.isAlive(); }), levelBosses.end());
+
+    // --- ZNAJDŹKI ---
     currentLevel.removeCollectedStars();
     for (auto& star : currentLevel.getStars()) {
         if (!star.isCollected() && player->getGlobalBounds().intersects(star.getBounds())) {
@@ -266,7 +341,6 @@ StateAction PlayState::update(sf::Time dt)
     }
 
     for (const auto& tramp : currentLevel.getTrampolines()) {
-        // Skok odpala się tylko, gdy gracz opada na trampolinę (y > 0)
         if (player->getGlobalBounds().intersects(tramp.getBounds()) && player->getVelocity().y > 0) {
             player->superBounce();
         }
@@ -291,7 +365,7 @@ StateAction PlayState::update(sf::Time dt)
                     std::string nextMap = "pliki/level" + std::to_string(currentLevelNumber) + ".txt";
                     if (currentLevel.loadFromFile(nextMap, mushroomTexture)) {
                         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
-                        player->resetCheckpoint(); // Reset checkpointu na nowej mapie
+                        player->resetCheckpoint();
                         backgroundTexture.loadFromFile("pliki/tlo" + std::to_string(currentLevelNumber) + ".png");
                     }
                 }
@@ -303,16 +377,12 @@ StateAction PlayState::update(sf::Time dt)
     {
         if (player->hasCheckpoint())
         {
-            player->setHp(3); // Odradza się z pełnym zdrowiem
-            player->resetVelocity(); // ZATRZYMUJEMY PĘD SPADANIA!
+            player->setHp(3);
+            player->resetVelocity();
 
-            // Przeładuj mapę, aby odnowić potwory i znikające klocki!
             currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture);
-
-            // Teleportujemy gracza na pozycję flagi
             player->setPosition(player->getCheckpointPos().x, player->getCheckpointPos().y);
 
-            // Wizualnie ponownie aktywujemy naszą flagę, żeby nadal była niebieska po resecie mapy
             for (auto& c : currentLevel.getCheckpoints()) {
                 if (std::abs(c.getBounds().left - player->getCheckpointPos().x) < 10.f) {
                     c.activate();
@@ -321,7 +391,6 @@ StateAction PlayState::update(sf::Time dt)
         }
         else
         {
-            // Jeśli gracz NIE MA checkpointu -> Game Over
             isGameOver = true;
         }
     }
@@ -345,35 +414,24 @@ void PlayState::render(sf::RenderWindow& window)
         heartShape.setFillColor(i < player->getHp() ? sf::Color::Red : sf::Color(60, 60, 60));
         window.draw(heartShape);
     }
-    // --- 2. TUTAJ COŚ NOWEGO: RYSOWANIE SCORE NA ŚRODKU ---
+
     scoreText.setString("Score: " + std::to_string(player->getScore()));
-    // Ustawiamy na środku ekranu (400) minus połowa szerokości tekstu, wysokość 25.f
     scoreText.setPosition(300.f - scoreText.getGlobalBounds().width / 2.f, 25.f);
     window.draw(scoreText);
 
     if (isPaused) pauseMenu->render(window);
-    if (isGameOver) 
+    if (isGameOver)
     {
         gameOverText.setPosition(400.f - gameOverText.getGlobalBounds().width / 2.f, 240.f);
         resetText.setPosition(400.f - resetText.getGlobalBounds().width / 2.f, 320.f);
-        window.draw(gameOverText); 
+        window.draw(gameOverText);
         window.draw(resetText);
-        //gameOverText.setPosition(camera.getCenter().x - (gameOverText.getGlobalBounds().width / 2.f), camera.getCenter().y - 40.f);
-        //resetText.setPosition(camera.getCenter().x - (resetText.getGlobalBounds().width / 2.f), camera.getCenter().y + 30.f);
-        //window.draw(gameOverText);
-        //window.draw(resetText);
     }
-    else if (isGameWon) 
+    else if (isGameWon)
     {
         gameWonText.setPosition(400.f - gameWonText.getGlobalBounds().width / 2.f, 240.f);
         resetText.setPosition(400.f - resetText.getGlobalBounds().width / 2.f, 320.f);
         window.draw(gameWonText); window.draw(resetText);
-
-        //gameWonText.setPosition(camera.getCenter().x - (gameWonText.getGlobalBounds().width / 2.f), camera.getCenter().y - 40.f);
-        //resetText.setPosition(camera.getCenter().x - (resetText.getGlobalBounds().width / 2.f), camera.getCenter().y + 30.f);
-        
-        //window.draw(gameWonText);
-        //window.draw(resetText);
     }
     window.draw(starText);
     keyText.setString(player->hasKey() ? "Klucz: TAK" : "Klucz: NIE");
