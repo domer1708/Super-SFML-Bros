@@ -90,10 +90,14 @@ public:
 // --- CHECKPOINT ---
 class Checkpoint {
 private:
-    sf::RectangleShape shape;
+    sf::Sprite sprite;
+    sf::RectangleShape hitbox;
     bool activated;
+    sf::Clock animClock; // Zegar do animacji
+    int currentFrame;    // Aktualna klatka
 public:
-    Checkpoint(float x, float y);
+    Checkpoint(float x, float y, const sf::Texture& tex);
+    void update(sf::Time dt); // Nowa funkcja!
     void render(sf::RenderWindow& window);
     sf::FloatRect getBounds() const;
     void activate();

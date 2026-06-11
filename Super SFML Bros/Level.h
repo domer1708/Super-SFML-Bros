@@ -34,7 +34,7 @@ public:
     Level() = default;
 
     // --- UJEDNOLICONA DEKLARACJA ---
-    bool loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex);
+    bool loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex, const sf::Texture& flagTex);
 
     const std::vector<sf::RectangleShape>& getPlatforms() const;
     sf::Vector2f getPlayerSpawn() const;

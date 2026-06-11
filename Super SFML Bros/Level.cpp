@@ -1,6 +1,6 @@
 #include "Level.h"
 
-bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex)
+bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex, const sf::Texture& flagTex)
 {
     platforms.clear();
     stars.clear();
@@ -54,7 +54,7 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
             else if (tile == 'K') keys.push_back(Key(x * tile_size, y * tile_size, keyTex));
             else if (tile == 'E') enemies.push_back(Enemy(x * tile_size, y * tile_size));
             else if (tile == 'M') mushrooms.push_back(Mushroom(x * tile_size, y * tile_size, mushroomTex));
-            else if (tile == 'C') checkpoints.push_back(Checkpoint(x * tile_size, y * tile_size));
+            else if (tile == 'C') checkpoints.push_back(Checkpoint(x * tile_size, y * tile_size, flagTex));
             else if (tile == 'Z') vanishingPlatforms.push_back(VanishingPlatform(x * tile_size, y * tile_size));
             else if (tile == 'R') movingPlatforms.push_back(MovingPlatform(x * tile_size, y * tile_size));
             else if (tile == 'W') turrets.push_back(Turret(x * tile_size, y * tile_size));
@@ -114,6 +114,7 @@ void Level::updateLevelElements(sf::Time dt) {
     for (auto& vp : vanishingPlatforms) vp.update(dt);
     for (auto& mp : movingPlatforms) mp.update(dt);
     for (auto& v : elevators) v.update(dt);
+    for (auto& c : checkpoints) c.update(dt); // <--- DODANA ANIMACJA FLAGI!
 
     for (auto& t : turrets) {
         if (t.updateAndCheckShoot(dt)) {

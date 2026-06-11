@@ -198,17 +198,51 @@ void Key::collect() { collected = true; }
 bool Key::isCollected() const { return collected; }
 
 // --- CHECKPOINT ---
-Checkpoint::Checkpoint(float x, float y) {
-    shape.setSize(sf::Vector2f(20.f, 50.f));
-    shape.setFillColor(sf::Color(100, 100, 100)); // Szary = nieaktywny
-    shape.setPosition(x + 15.f, y);
+Checkpoint::Checkpoint(float x, float y, const sf::Texture& tex) {
+    sprite.setTexture(tex);
+
+    // Zakładamy, że obrazek ma 4 klatki powiewania
+    int frameW = tex.getSize().x / 4;
+    int frameH = tex.getSize().y;
+
+    // Ustawiamy pierwszą klatkę
+    sprite.setTextureRect(sf::IntRect(0, 0, frameW, frameH));
+
+    float scaleX = 50.f / frameW;
+    float scaleY = 50.f / frameH;
+    sprite.setScale(scaleX, scaleY);
+    sprite.setPosition(x, y);
+
+    hitbox.setSize(sf::Vector2f(20.f, 50.f));
+    hitbox.setPosition(x + 15.f, y);
+    hitbox.setFillColor(sf::Color::Transparent);
+
     activated = false;
+    currentFrame = 0;
+
+    sprite.setColor(sf::Color(100, 100, 100)); // Szara, zanim Mario jej dotknie
 }
-void Checkpoint::render(sf::RenderWindow& window) { window.draw(shape); }
-sf::FloatRect Checkpoint::getBounds() const { return shape.getGlobalBounds(); }
+
+void Checkpoint::update(sf::Time dt) {
+    // Zmieniamy klatkę animacji co 0.15 sekundy
+    if (animClock.getElapsedTime().asSeconds() > 0.15f) {
+        currentFrame = (currentFrame + 1) % 4; // Klatki: 0, 1, 2, 3 i od nowa
+
+        int frameW = sprite.getTexture()->getSize().x / 4;
+        int frameH = sprite.getTexture()->getSize().y;
+
+        // Przesuwamy wycięcie w prawo
+        sprite.setTextureRect(sf::IntRect(currentFrame * frameW, 0, frameW, frameH));
+        animClock.restart();
+    }
+}
+
+void Checkpoint::render(sf::RenderWindow& window) { window.draw(sprite); }
+sf::FloatRect Checkpoint::getBounds() const { return hitbox.getGlobalBounds(); }
+
 void Checkpoint::activate() {
     activated = true;
-    shape.setFillColor(sf::Color::Blue); // Niebieski = aktywny!
+    sprite.setColor(sf::Color::White); // Po dotknięciu odzyskuje kolory
 }
 
 // --- ZANIKAJĄCA PLATFORMA ---

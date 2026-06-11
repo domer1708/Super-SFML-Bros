@@ -77,6 +77,7 @@ private:
     sf::Texture doorTexture; // <--- DODANA TEKSTURA DRZWI
     sf::Texture trapTexture;
     sf::Texture keyTexture;
+    sf::Texture flagTexture;
 
     sf::Sprite backgroundSprite;
 
