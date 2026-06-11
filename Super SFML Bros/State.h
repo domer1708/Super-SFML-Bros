@@ -71,6 +71,7 @@ private:
 
     // TEKSTURY
     sf::Texture mushroomTexture;
+    sf::Texture platformTexture;
     sf::Texture backgroundTexture;
     sf::Texture groundTexture;
     sf::Texture doorTexture; // <--- DODANA TEKSTURA DRZWI
