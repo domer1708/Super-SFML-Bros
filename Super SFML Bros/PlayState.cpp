@@ -48,6 +48,13 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     timerText.setFillColor(sf::Color(255, 215, 0));
     timerText.setString("Czas: 0s");
     totalTime=0.f;
+    //licznik smierci
+    deathCount = 0;
+    deathText.setFont(font);
+    deathText.setCharacterSize(16);
+    deathText.setFillColor(sf::Color::Red); //
+    deathText.setString("ZGONY: 0");
+    deathText.setPosition(20.f, 550.f);
 
     // =======================================================
     // --- NAPRAWA BIAŁEGO TŁA W TEKSTURACH ---
@@ -135,7 +142,7 @@ void PlayState::saveGame() {
             << player->getCheckpointPos().x << "\n" << player->getCheckpointPos().y << "\n"
             << player->getPosition().x << "\n" << player->getPosition().y << "\n"
             << bossHp << "\n"
-            << totalTime << "\n";
+            << totalTime << "\n" << deathCount <<"\n";
 
         file.close();
         if (pauseMenu) pauseMenu->setItemText(1, "ZAPISANO!");
@@ -149,7 +156,8 @@ bool PlayState::loadGame() {
         bool hasKey, hasCheck;
         float cx, cy, px, py;
 
-        file >> lvl >> charIdx >> hp >> score >> stars >> hasKey >> hasCheck >> cx >> cy >> px >> py >> bossHp >> totalTime;
+        file >> lvl >> charIdx >> hp >> score >> stars >> hasKey >> hasCheck 
+        >> cx >> cy >> px >> py >> bossHp >> totalTime >> deathCount;
         file.close();
 
         currentLevelNumber = lvl; currentCharacterIndex = charIdx;
@@ -439,6 +447,9 @@ StateAction PlayState::update(sf::Time dt)
 
     if (!player->isAlive() || player->getPosition().y > 750.f)
     {
+        // licznik śmierci zwiększający sie 
+        deathCount++;
+        deathText.setString("ZGONY: " + std::to_string(deathCount));
         if (player->hasCheckpoint())
         {
             player->setHp(3);
@@ -499,4 +510,5 @@ void PlayState::render(sf::RenderWindow& window)
         window.draw(gameWonText); window.draw(resetText);
     }
     window.draw(timerText);
+    window.draw(deathText);
 }

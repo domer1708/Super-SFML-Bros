@@ -93,6 +93,8 @@ private:
     sf::Clock gameClock;
     float totalTime;    // Zegar, który mierzy czas od uruchomienia stanu
     bool isPaused;
+    sf::Text deathText;     // licznik zgonu
+    int deathCount;
     sf::Text keyText;
 
     void saveGame();
