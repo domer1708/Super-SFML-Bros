@@ -19,7 +19,11 @@ class Player : public Entity
 {
 private:
     sf::RectangleShape shape; // Niewidzialny hitbox (fizyka)
-    sf::Texture texture;      // Załadowana tekstura Mario
+    sf::Texture texStand;
+    sf::Texture texWalk1;
+    sf::Texture texWalk2;
+    sf::Texture texWalk3;
+    sf::Texture texJump;      // Załadowana tekstura Mario
     sf::Sprite sprite;        // Wyświetlany Mario
 
     sf::Clock animationClock;
