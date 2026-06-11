@@ -159,10 +159,10 @@ bool PlayState::loadGame() {
         file >> lvl >> charIdx >> hp >> score >> stars >> hasKey >> hasCheck 
         >> cx >> cy >> px >> py >> bossHp >> totalTime >> deathCount;
         file.close();
-
+        deathText.setString("ZGONY: " + std::to_string(deathCount));
         currentLevelNumber = lvl; currentCharacterIndex = charIdx;
         player->setHp(hp); player->setScore(score); player->setStarsCount(stars); player->setKey(hasKey);
-
+        
         if (hasCheck) player->setCheckpoint(sf::Vector2f(cx, cy));
         else player->resetCheckpoint();
 
@@ -459,7 +459,8 @@ StateAction PlayState::update(sf::Time dt)
             player->setPosition(player->getCheckpointPos().x, player->getCheckpointPos().y);
 
             for (auto& c : currentLevel.getCheckpoints()) {
-                if (std::abs(c.getBounds().left - player->getCheckpointPos().x) < 10.f) {
+                if (std::abs(c.getBounds().left - player->getCheckpointPos().x) < 10.f) 
+                {
                     c.activate();
                 }
             }
