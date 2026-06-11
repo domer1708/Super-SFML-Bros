@@ -39,10 +39,11 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
                 sf::RectangleShape block;
                 block.setSize(sf::Vector2f(tile_size, tile_size));
 
-                block.setFillColor(sf::Color::White); // Wymuszenie neutralnego podkładu 
-                block.setTexture(&groundTex);         // Nadanie tekstury
-                block.setPosition(x * tile_size, y * tile_size);
+                // Ustawiamy dynamiczną teksturę przekazaną z PlayState
+                block.setTexture(&platformTex);
+                block.setFillColor(sf::Color::White); // Wymagane w SFML, aby tekstura miała oryginalne kolory
 
+                block.setPosition(x * tile_size, y * tile_size);
                 platforms.push_back(block);
             }
             else if (tile == 'P') playerSpawnPosition = sf::Vector2f(x * tile_size, y * tile_size);
