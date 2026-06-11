@@ -19,6 +19,12 @@ class Player : public Entity
 {
 private:
 	sf::RectangleShape shape; // kształt gracza (do wymiany)
+
+	sf::Texture texture;     // Trzyma cały plik mario_spritesheet.png
+    sf::Sprite sprite;       // Wyświetla wyciętego Mario na ekranie
+    sf::Clock animationClock; // Zegar do odmierzania czasu między klatkami nóżek
+    int animationFrame;      // Numer klatki (0, 1 lub 2)
+    bool isFacingRight;
 	bool isJumping;
 	int hp;                      
 	sf::Time invincibilityTimer;

@@ -1,32 +1,50 @@
 #include "Entity.h"
 #include <iostream>
+#include <cmath>
 
 Player::Player()
 {
-	isJumping = false;
-	hasSuperPower = false;
-	velocity = sf::Vector2f(0.f, 0.f);
-	hp = 3;
-	score = 0;
-	starsCollected = 0;
-	killCombo = 0;
-	hasKeyVar = false;
-	hasActiveCheckpoint = false;
-	checkpointPosition = sf::Vector2f(0.f, 0.f);
-	// ---------------------------------------------------------
+    isJumping = false;
+    hasSuperPower = false;
+    velocity = sf::Vector2f(0.f, 0.f);
+    hp = 3;
+    score = 0;
+    starsCollected = 0;
+    killCombo = 0;
+    hasKeyVar = false;
+    hasActiveCheckpoint = false;
+    checkpointPosition = sf::Vector2f(0.f, 0.f);
+    // ---------------------------------------------------------
 
-	invincibilityTimer = sf::Time::Zero;
-	baseColor = sf::Color::Red;
-	shape.setFillColor(baseColor);
-	shape.setSize(sf::Vector2f(50.f, 50.f));
-	// ładowanie dzwięku przy skoku
-	if (jumpBuffer.loadFromFile("pliki/jump.ogg"))
+    invincibilityTimer = sf::Time::Zero;
+    baseColor = sf::Color::White; // Zmieniamy bazowy na biały, by tekstura miała naturalne kolory
+
+    // --- FIZYCZNE PUDEŁKO KOLIZJI (Niewidzialne pod spodem) ---
+    shape.setFillColor(sf::Color::Transparent); // Robimy je przezroczyste
+    shape.setSize(sf::Vector2f(50.f, 50.f));
+    sf::Image image;
+    // --- ŁADOWANIE GRAFIKI MARIO ---
+    if (texture.loadFromFile("pliki/mario_spritesheet.png"))
+    {
+		image.createMaskFromColor(sf::Color::White);
+        sprite.setTexture(texture);
+        sprite.setTextureRect(sf::IntRect(0, 0, 16, 16)); // Pierwsza klatka - stanie
+        sprite.setScale(3.125f, 3.125f);                  // Skalowanie 16px -> 50px
+    }
+    else
+    {
+        std::cout << "Blad: Nie udalo sie pliku pliki/mario_spritesheet.png" << std::endl;
+    }
+
+    animationFrame = 0;
+    isFacingRight = true;
+
+    // Ładowanie dźwięku przy skoku
+    if (jumpBuffer.loadFromFile("pliki/jump.ogg"))
     {
         jumpSound.setBuffer(jumpBuffer);
-        jumpSound.setVolume(40.f); // Ustawiamy 50% głośności na start
-		// to miało niby działać ale nie działa bo jest problem z opóznionym dzwiekiem
-		jumpSound.setVolume(0.f); // Wyciszamy całkowicie
-        jumpSound.play();         // Odpalamy "na sucho"
+        jumpSound.setVolume(0.f); // Wyciszamy całkowicie na "suchy" start
+        jumpSound.play();         
         jumpSound.setVolume(50.f);
     }
     else
@@ -37,59 +55,45 @@ Player::Player()
 
 void Player::setPosition(float x, float y)
 {
-	position = sf::Vector2f(x, y);
-	shape.setPosition(position);
+    position = sf::Vector2f(x, y);
+    shape.setPosition(position);
 }
 
 void Player::handleEvent(sf::Event& event)
 {
-	if (event.type == sf::Event::KeyPressed)
-	{
-		if ((event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up) && !isJumping)
-		{
-			velocity.y = -600.f;
-			isJumping = true;
-            //audio
-			jumpSound.play();
-		}
-	}
+    if (event.type == sf::Event::KeyPressed)
+    {
+        if ((event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up) && !isJumping)
+        {
+            velocity.y = -600.f;
+            isJumping = true;
+            jumpSound.play();
+        }
+    }
 }
 
 void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platforms)
 {
-	// --- SYSTEM NIEŚMIERTELNOŚCI I MIGANIA ---
-	if (invincibilityTimer > sf::Time::Zero)
-	{
-		invincibilityTimer -= dt;
+    // --- SYSTEM NIEŚMIERTELNOŚCI I MIGANIA GRAFIKI ---
+    if (invincibilityTimer > sf::Time::Zero)
+    {
+        invincibilityTimer -= dt;
 
-		// Co 100 milisekund zmieniamy przezroczystość (miganie)
-		if (static_cast<int>(invincibilityTimer.asMilliseconds() / 100) % 2 == 0)
-			shape.setFillColor(sf::Color(baseColor.r, baseColor.g, baseColor.b, 100)); // Półprzezroczysty, ale zachowuje kolor!
-		else
-			shape.setFillColor(baseColor); // Normalny
-	}
-	else
-	{
-		shape.setFillColor(baseColor); // Wracamy do zapamiętanego koloru!
-	}
+        // Miganie za pomocą przezroczystości Sprite'a
+        if (static_cast<int>(invincibilityTimer.asMilliseconds() / 100) % 2 == 0)
+            sprite.setColor(sf::Color(baseColor.r, baseColor.g, baseColor.b, 100)); // Półprzezroczysty Mario
+        else
+            sprite.setColor(baseColor);
+    }
+    else
+    {
+        sprite.setColor(baseColor);
+    }
 
-	/*float playerSpeed = 300.f;
-	float gravity = 1000.f;
-	velocity.x = 0.f;
-
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-	{
-		velocity.x += playerSpeed;
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-	{
-		velocity.x -= playerSpeed;
-	}*/
-    // --- NOWY SYSTEM ROZPĘDU I ŚLIZGANIA ---
+    // --- SYSTEM ROZPĘDU I ŚLIZGANIA ---
     float gravity = 1000.f;
     float dtSeconds = dt.asSeconds();
 
-    // 1. Zbieranie kierunku ruchu
     float directionX = 0.f;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
     {
@@ -100,133 +104,180 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
         directionX -= 1.f;
     }
 
-    // 2. Płynne przyspieszanie lub hamowanie
     if (directionX != 0.f)
     {
-        // Gracz naciska klawisz -> przyspieszamy
         velocity.x += directionX * acceleration * dtSeconds;
         
-        // Blokada maksymalnej prędkości (maxSpeed = 350.f)
         if (velocity.x > maxSpeed)  velocity.x = maxSpeed;
         if (velocity.x < -maxSpeed) velocity.x = -maxSpeed;
     }
     else
     {
-        // Gracz puścił klawisze -> tarcie (friction = 8.f) robi ślizg
         velocity.x -= velocity.x * friction * dtSeconds;
-
-        // Jeśli prędkość spadnie blisko zera, zatrzymujemy całkowicie
         if (std::abs(velocity.x) < 10.f)
         {
             velocity.x = 0.f;
         }
     }
-    // ----------------------------------------
 
-	position.x += velocity.x * dt.asSeconds();
-	shape.setPosition(position);
+    // Ruch w osi X i kolizje
+    position.x += velocity.x * dt.asSeconds();
+    shape.setPosition(position);
 
-	for (const auto& i : platforms)
-	{
-		if (shape.getGlobalBounds().intersects(i.getGlobalBounds()))
-		{
-			if (velocity.x > 0)
-			{
-				position.x = i.getGlobalBounds().left - shape.getGlobalBounds().width;
-			}
-			else if (velocity.x < 0)
-			{
-				position.x = i.getGlobalBounds().left + i.getGlobalBounds().width;
-			}
-			velocity.x = 0.f;
-			shape.setPosition(position);
-		}
-	}
+    for (const auto& i : platforms)
+    {
+        if (shape.getGlobalBounds().intersects(i.getGlobalBounds()))
+        {
+            if (velocity.x > 0)
+            {
+                position.x = i.getGlobalBounds().left - shape.getGlobalBounds().width;
+            }
+            else if (velocity.x < 0)
+            {
+                position.x = i.getGlobalBounds().left + i.getGlobalBounds().width;
+            }
+            velocity.x = 0.f;
+            shape.setPosition(position);
+        }
+    }
 
-	velocity.y += gravity * dt.asSeconds();
-	position.y += velocity.y * dt.asSeconds();
-	shape.setPosition(position);
-	isJumping = true;
+    // Ruch w osi Y i kolizje
+    velocity.y += gravity * dt.asSeconds();
+    position.y += velocity.y * dt.asSeconds();
+    shape.setPosition(position);
+    isJumping = true;
 
-	for (const auto& i : platforms)
-	{
-		if (shape.getGlobalBounds().intersects(i.getGlobalBounds()))
-		{
-			if (velocity.y > 0)
-			{
-				position.y = i.getGlobalBounds().top - shape.getGlobalBounds().height;
-				isJumping = false;
-				resetCombo();
-			}
-			else if (velocity.y < 0)
-			{
-				position.y = i.getGlobalBounds().top + i.getGlobalBounds().height;
-			}
-			velocity.y = 0.f;
-			shape.setPosition(position);
-		}
-	}
+    for (const auto& i : platforms)
+    {
+        if (shape.getGlobalBounds().intersects(i.getGlobalBounds()))
+        {
+            if (velocity.y > 0)
+            {
+                position.y = i.getGlobalBounds().top - shape.getGlobalBounds().height;
+                isJumping = false;
+                resetCombo();
+            }
+            else if (velocity.y < 0)
+            {
+                position.y = i.getGlobalBounds().top + i.getGlobalBounds().height;
+            }
+            velocity.y = 0.f;
+            shape.setPosition(position);
+        }
+    }
+
+    // --- ANIMACJA I OBRACANIE MARIO ---
+    if (velocity.x > 1.f) isFacingRight = true;
+    else if (velocity.x < -1.f) isFacingRight = false;
+
+    if (isJumping || std::abs(velocity.y) > 50.f) 
+    {
+        // Klatka skoku (X = 96 w oryginalnym arkuszu NES)
+        sprite.setTextureRect(sf::IntRect(96, 0, 16, 16));
+    }
+    else if (std::abs(velocity.x) > 10.f) 
+    {
+        // Zmiana klatki biegu co 0.08 sekundy
+        if (animationClock.getElapsedTime().asSeconds() > 0.08f) {
+            animationFrame = (animationFrame + 1) % 3; // 3 klatki biegu
+            animationClock.restart();
+        }
+        int frameX = 16 + (animationFrame * 16); // Klatki startują od 16px
+        sprite.setTextureRect(sf::IntRect(frameX, 0, 16, 16));
+    }
+    else 
+    {
+        sprite.setTextureRect(sf::IntRect(0, 0, 16, 16)); // Stanie w miejscu
+    }
+
+    // Fizyczne obracanie grafiki (lustro)
+    if (!isFacingRight) 
+    {
+        sprite.setScale(-3.125f, 3.125f);
+        sprite.setOrigin(16.f, 0.f); // Zapobiega przeskokom pozycji
+    } 
+    else 
+    {
+        sprite.setScale(3.125f, 3.125f);
+        sprite.setOrigin(0.f, 0.f);
+    }
 }
 
 void Player::render(sf::RenderWindow& window)
 {
-	window.draw(shape);
+    // Przyklejamy Sprite do aktualnej pozycji fizycznej
+    sprite.setPosition(shape.getPosition());
+    
+    // Rysujemy animowanego Mario
+    window.draw(sprite);
 }
 
 sf::Vector2f Player::getPosition() const
 {
-	return position;
+    return position;
 }
 
 void Player::setColor(sf::Color color)
 {
-	baseColor = color;
-	shape.setFillColor(baseColor);
+    if (color == sf::Color::Red) {
+        baseColor = sf::Color(254, 254, 254); // Prawie biały (dla oka identyczny, ale oszukuje maskę tła)
+    }
+    else if (color == sf::Color::Green) {
+        baseColor = sf::Color(120, 255, 120); 
+    }
+    else if (color == sf::Color::Blue) {
+        baseColor = sf::Color(120, 120, 255); 
+    }
+    else 
+	{
+        baseColor = color; 
+    }
+
+    sprite.setColor(baseColor);
 }
 
 void Player::takeDamage(int damage)
 {
-	if (invincibilityTimer <= sf::Time::Zero)
-	{
-		hp -= damage;
-		invincibilityTimer = sf::seconds(1.5f);
+    if (invincibilityTimer <= sf::Time::Zero)
+    {
+        hp -= damage;
+        invincibilityTimer = sf::seconds(1.5f);
 
-		velocity.y = -400.f;
-		isJumping = true;
-	}
+        velocity.y = -400.f;
+        isJumping = true;
+    }
 }
 
 int Player::getHp() const
 {
-	return hp;
+    return hp;
 }
 
 bool Player::isAlive() const
 {
-	return hp > 0;
+    return hp > 0;
 }
 
 void Player::bounce()
 {
-	velocity.y = -600.f;
-	isJumping = true;
+    velocity.y = -600.f;
+    isJumping = true;
 }
 
 void Player::setSuper(bool status)
 {
-	hasSuperPower = status;
-	if (status) setColor(sf::Color(255, 215, 0)); // Złoty kolor gdy ma moc!
-	else setColor(sf::Color::Red); // Powrót do czerwonego (domyślny)
+    hasSuperPower = status;
+    if (status) setColor(sf::Color(255, 215, 0)); // Złoty Mario po zjedzeniu grzyba!
+    else setColor(sf::Color::White);              // Powrót do naturalnych kolorów
 }
 
 void Player::superBounce()
 {
-	velocity.y = -1100.f; // Super wybicie w górę!
-	isJumping = true;
+    velocity.y = -1100.f; 
+    isJumping = true;
 }
-
 void Player::setCheckpoint(sf::Vector2f pos)
 {
-	checkpointPosition = pos;
-	hasActiveCheckpoint = true;
+    checkpointPosition = pos;
+    hasActiveCheckpoint = true;
 }
