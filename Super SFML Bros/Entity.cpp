@@ -26,11 +26,13 @@ Player::Player()
     sf::Image image;
     if (image.loadFromFile("pliki/mario.png"))
     {
-        // Jeśli masz ciemnozielone tło wokół Mario, wpisz tu jego kod RGB, np: sf::Color(89, 137, 89)
-        // Jeśli jest przezroczyste natywnie z PNG, to nic nie zepsuje.
         image.createMaskFromColor(sf::Color::White);
 
         texture.loadFromImage(image);
+
+        // Wyłączamy rozmywanie pikseli (niezwykle ważne w pixel-arcie!)
+        texture.setSmooth(false);
+
         sprite.setTexture(texture);
     }
     else
@@ -146,13 +148,13 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
 
     // =========================================================================
     // RĘCZNE WYCINANIE KLATEK (X_START, Y_START, SZEROKOŚĆ, WYSOKOŚĆ)
-    // Zmierzone z trzeciego rzędu (zaraz pod logo z napisem Undertoad)
+    // Zmierzone z trzeciego rzędu obrazka mario.png
     // =========================================================================
     sf::IntRect frameStand(16, 218, 48, 80);
     sf::IntRect frameWalk1(82, 218, 48, 80);
     sf::IntRect frameWalk2(148, 218, 48, 80);
     sf::IntRect frameWalk3(214, 218, 48, 80);
-    sf::IntRect frameJump(395, 218, 54, 80); // Skok jest trochę dalej w prawo
+    sf::IntRect frameJump(395, 218, 54, 80);
 
     sf::IntRect currentFrame;
 
@@ -179,13 +181,13 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
     sprite.setTextureRect(currentFrame);
 
     // --- SKALOWANIE PROPORCJONALNE ---
-    // Skalujemy tak, żeby Mario miał 60 pikseli wysokości (hitbox ma 50, więc będzie ładnie wystawał)
-    float scaleFactor = 60.f / currentFrame.height;
+    float scaleFactor = 60.f / static_cast<float>(currentFrame.height);
 
     if (!isFacingRight)
     {
         sprite.setScale(-scaleFactor, scaleFactor);
-        sprite.setOrigin(currentFrame.width, 0.f);
+        // Wyciszony błąd C4244 dzięki rzutowaniu static_cast
+        sprite.setOrigin(static_cast<float>(currentFrame.width), 0.f);
     }
     else
     {
@@ -196,8 +198,12 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
 
 void Player::render(sf::RenderWindow& window)
 {
-    // Przesuwamy go trochę do góry i w lewo (-8px, -10px), żeby ładnie zakrył niewidzialnego hitboxa 50x50
-    sprite.setPosition(shape.getPosition().x - 8.f, shape.getPosition().y - 10.f);
+    // Rysowanie z zaokrąglaniem współrzędnych zapobiega błędom sub-pixel renderowania
+    // (migotaniu i powstawaniu dziwnych pasów na krawędziach)
+    float drawX = std::round(shape.getPosition().x - 8.f);
+    float drawY = std::round(shape.getPosition().y - 10.f);
+
+    sprite.setPosition(drawX, drawY);
     window.draw(sprite);
 }
 

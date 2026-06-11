@@ -1,17 +1,17 @@
 #pragma once
-
 #include "Entity.h"
 
 class Enemy : public Entity
 {
 private:
-    sf::RectangleShape shape;
+    sf::RectangleShape shape; // Niewidzialny hitbox
+    sf::Sprite sprite;        // Nasza grafika potwora
     float speed;
-    int direction; // 1 = prawo, -1 = lewo
+    int direction;
     bool alive;
-
 public:
-    Enemy(float startX, float startY);
+    // Dodano teksturę do konstruktora
+    Enemy(float startX, float startY, const sf::Texture& tex);
 
     void update(sf::Time dt, const std::vector<sf::RectangleShape>& platforms) override;
     void render(sf::RenderWindow& window) override;

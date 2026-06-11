@@ -1,47 +1,74 @@
 #include "Enemy.h"
 
-Enemy::Enemy(float startX, float startY)
+Enemy::Enemy(float startX, float startY, const sf::Texture& tex)
 {
     position = sf::Vector2f(startX, startY);
-    speed = 120.f; // Prędkość różowego potworka
-    direction = 1; // Na start idzie w prawo
+    speed = 120.f;
+    direction = -1; // Na start idzie w lewo
 
-    shape.setFillColor(sf::Color::Magenta);  // Różowy kolor
-    shape.setSize(sf::Vector2f(40.f, 40.f)); // Trochę mniejszy niż gracz (50x50)
-    shape.setPosition(position);
+    sprite.setTexture(tex);
+
+    float texW = static_cast<float>(tex.getSize().x);
+    float texH = static_cast<float>(tex.getSize().y);
+
+    // ROZSZERZANIE: 60 szerokości, 40 wysokości (wygląda bardziej jak półkole/kopuła)
+    float scaleX = 60.f / texW;
+    float scaleY = 40.f / texH;
+    sprite.setScale(scaleX, scaleY);
+
+    // Hitbox zostawiamy 40x40, by gracz nie ginął od byle muśnięcia boku potwora
+    shape.setFillColor(sf::Color::Transparent);
+    shape.setSize(sf::Vector2f(40.f, 40.f));
+
     alive = true;
 }
 
 void Enemy::update(sf::Time dt, const std::vector<sf::RectangleShape>& platforms)
 {
-    // Prosty ruch w lewo lub prawo
     velocity.x = speed * direction;
     position.x += velocity.x * dt.asSeconds();
-    shape.setPosition(position);
 
-    // Sprawdzanie kolizji z platformami - jeśli dotknie klocka, to zawraca
+    // Hitbox 40x40 wyśrodkowany w kafelku 50x50 (+5px w X, +10px w Y, by dotykał ziemi)
+    shape.setPosition(position.x + 5.f, position.y + 10.f);
+
     for (const auto& platform : platforms)
     {
         if (shape.getGlobalBounds().intersects(platform.getGlobalBounds()))
         {
-            if (direction > 0) // Szedł w prawo -> odbija w lewo
+            if (direction > 0)
             {
-                position.x = platform.getGlobalBounds().left - shape.getGlobalBounds().width;
+                position.x = platform.getGlobalBounds().left - shape.getGlobalBounds().width - 5.f;
                 direction = -1;
             }
-            else if (direction < 0) // Szedł w lewo -> odbija w prawo
+            else if (direction < 0)
             {
-                position.x = platform.getGlobalBounds().left + platform.getGlobalBounds().width;
+                position.x = platform.getGlobalBounds().left + platform.getGlobalBounds().width - 5.f;
                 direction = 1;
             }
-            shape.setPosition(position);
+            shape.setPosition(position.x + 5.f, position.y + 10.f);
         }
+    }
+
+    // Sprite 60x40 wyśrodkowany w kafelku 50x50 (-5px w X, +10px w Y, by dotykał ziemi)
+    sprite.setPosition(position.x - 5.f, position.y + 10.f);
+
+    float texW = static_cast<float>(sprite.getTexture()->getSize().x);
+    float texH = static_cast<float>(sprite.getTexture()->getSize().y);
+
+    // Zachowanie nowych proporcji (60x40) przy obrocie
+    if (direction < 0) {
+        sprite.setScale(60.f / texW, 40.f / texH);
+        sprite.setOrigin(0.f, 0.f);
+    }
+    else {
+        sprite.setScale(-60.f / texW, 40.f / texH);
+        sprite.setOrigin(texW, 0.f);
     }
 }
 
 void Enemy::render(sf::RenderWindow& window)
 {
-    window.draw(shape);
+    window.draw(sprite);
 }
 
 sf::FloatRect Enemy::getGlobalBounds() const
@@ -49,49 +76,48 @@ sf::FloatRect Enemy::getGlobalBounds() const
     return shape.getGlobalBounds();
 }
 
+// ==========================================
 // --- BOSS ---
+// ==========================================
 Boss::Boss(float startX, float startY) {
     position = sf::Vector2f(startX, startY);
-    hp = 5; // Boss ma 5 żyć
+    hp = 5;
     speed = 250.f;
     alive = true;
     state = 0;
     timer = 0.f;
-    shape.setFillColor(sf::Color(139, 0, 0)); // Ciemnoczerwony wielki kloc
-    shape.setSize(sf::Vector2f(80.f, 80.f));  // Znacznie większy
+    shape.setFillColor(sf::Color(139, 0, 0));
+    shape.setSize(sf::Vector2f(80.f, 80.f));
     shape.setPosition(position);
 }
 
 void Boss::updateBoss(sf::Time dt, const std::vector<sf::RectangleShape>& platforms, sf::Vector2f playerPos) {
-    velocity.y += 1000.f * dt.asSeconds(); // Grawitacja
+    velocity.y += 1000.f * dt.asSeconds();
 
-    // --- POPRAWKA 1: BOSS ZASYPIA, GDY JESTEŚ DALEKO ---
     float distanceToPlayer = std::abs(playerPos.x - position.x);
-    if (distanceToPlayer < 800.f) { // Budzi się, gdy gracz jest na tym samym ekranie
+    if (distanceToPlayer < 800.f) {
         timer += dt.asSeconds();
 
-        // Maszyna Stanów
-        if (state == 0) { // Odpoczywa
+        if (state == 0) {
             velocity.x = 0;
-            if (timer > 2.0f) { // Co 2 sekundy atakuje
+            if (timer > 2.0f) {
                 state = 1;
                 timer = 0.f;
                 if (playerPos.x > position.x) velocity.x = speed;
                 else velocity.x = -speed;
             }
         }
-        else if (state == 1) { // Szarżuje
-            if (timer > 1.5f) { // Szarża trwa 1.5 sekundy
+        else if (state == 1) {
+            if (timer > 1.5f) {
                 state = 0;
                 timer = 0.f;
             }
         }
     }
     else {
-        velocity.x = 0.f; // Boss stoi i czeka, nie popełnia samobójstwa!
+        velocity.x = 0.f;
     }
 
-    // Ruch X i kolizje
     position.x += velocity.x * dt.asSeconds();
     shape.setPosition(position);
     for (const auto& platform : platforms) {
@@ -103,12 +129,10 @@ void Boss::updateBoss(sf::Time dt, const std::vector<sf::RectangleShape>& platfo
         }
     }
 
-    // Ruch Y i kolizje (podłoga)
     position.y += velocity.y * dt.asSeconds();
     shape.setPosition(position);
     for (const auto& platform : platforms) {
         if (shape.getGlobalBounds().intersects(platform.getGlobalBounds())) {
-            // --- POPRAWKA 2: UNIKANIE ZACINANIA SIĘ O KLOCKI (-0.1f) ---
             if (velocity.y > 0) position.y = platform.getGlobalBounds().top - shape.getGlobalBounds().height - 0.1f;
             else if (velocity.y < 0) position.y = platform.getGlobalBounds().top + platform.getGlobalBounds().height;
             velocity.y = 0.f;

@@ -89,15 +89,20 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
         flagTexture.setSmooth(false);
     }
 
-    // --- TEKSTURA LODU ---
+    // NAPRAWIONA LITERÓWKA (icleblock.png)
     sf::Image iceImage;
-    if (iceImage.loadFromFile("pliki/iceblock.png")) {
-        // Usuwamy ewentualne idealnie białe tło (częsta sprawa po konwersji z SVG)
+    if (iceImage.loadFromFile("pliki/icleblock.png")) {
         iceImage.createMaskFromColor(sf::Color::White);
         iceTexture.loadFromImage(iceImage);
     }
-    else {
-        std::cout << "Blad ladowania pliku pliki/iceblock.png!" << std::endl;
+
+    // --- ZAMIANA TEKSTUR PRZECIWNIKÓW ---
+    // Teraz enemyTextureA ładuje B (Zielonego), a enemyTextureB ładuje A (Pomarańczowego)
+    if (!enemyTextureA.loadFromFile("pliki/spike monster B.png")) {
+        std::cout << "Blad ladowania pliki/spike monster B.png!" << std::endl;
+    }
+    if (!enemyTextureB.loadFromFile("pliki/spike monster A.png")) {
+        std::cout << "Blad ladowania pliki/spike monster A.png!" << std::endl;
     }
     // =======================================================
 
@@ -130,8 +135,7 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
             platformTexture.setRepeated(true);
         }
 
-        // Dodano iceTexture na końcu
-        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture);
+        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture, enemyTextureA, enemyTextureB);
         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
     }
 
@@ -200,8 +204,7 @@ bool PlayState::loadGame() {
             platformTexture.setRepeated(true);
         }
 
-        // Dodano iceTexture
-        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture);
+        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture, enemyTextureA, enemyTextureB);
 
         if (hasCheck) {
             for (auto& c : currentLevel.getCheckpoints()) {
@@ -439,8 +442,7 @@ StateAction PlayState::update(sf::Time dt) {
                         platformTexture.setRepeated(true);
                     }
 
-                    // Dodano iceTexture
-                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture)) {
+                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture, enemyTextureA, enemyTextureB)) {
                         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
                         player->resetCheckpoint();
                         backgroundTexture.loadFromFile("pliki/tlo" + std::to_string(currentLevelNumber) + ".png");
@@ -457,8 +459,7 @@ StateAction PlayState::update(sf::Time dt) {
             player->setHp(3);
             player->resetVelocity();
 
-            // Dodano iceTexture
-            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture);
+            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture, enemyTextureA, enemyTextureB);
             player->setPosition(player->getCheckpointPos().x, player->getCheckpointPos().y);
 
             for (auto& c : currentLevel.getCheckpoints()) {
