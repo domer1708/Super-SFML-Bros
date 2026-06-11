@@ -1,6 +1,6 @@
 #include "Level.h"
 
-bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& groundTex, const sf::Texture& doorTex, const sf::Texture& trapTex)
+bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex)
 {
     platforms.clear();
     stars.clear();
@@ -39,9 +39,9 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
                 sf::RectangleShape block;
                 block.setSize(sf::Vector2f(tile_size, tile_size));
 
-                // Ustawiamy dynamiczną teksturę przekazaną z PlayState
+                // Teraz platformTex jest poprawnie przekazywane do funkcji!
                 block.setTexture(&platformTex);
-                block.setFillColor(sf::Color::White); // Wymagane w SFML, aby tekstura miała oryginalne kolory
+                block.setFillColor(sf::Color::White);
 
                 block.setPosition(x * tile_size, y * tile_size);
                 platforms.push_back(block);
