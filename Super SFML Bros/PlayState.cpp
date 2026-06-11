@@ -64,13 +64,6 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
         mushroomTexture.loadFromImage(mushroomImage);
     }
 
-    sf::Image groundImage;
-    if (groundImage.loadFromFile("pliki/ground.png")) {
-        groundImage.createMaskFromColor(sf::Color::White);
-        groundTexture.loadFromImage(groundImage);
-        groundTexture.setRepeated(true);
-    }
-
     sf::Image doorImage;
     if (doorImage.loadFromFile("pliki/door.png")) {
         doorImage.createMaskFromColor(sf::Color::Black);
@@ -107,8 +100,19 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
         else if (characterIndex == 1) player->setColor(sf::Color::Green);
         else if (characterIndex == 2) player->setColor(sf::Color::Blue);
 
-        // DODANO trapTexture
-        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, groundTexture, doorTexture, trapTexture);
+        // --- Nowa logika wyboru tekstury klocków z zachowaniem maskowania ---
+        std::string platName = "pliki/ground.png"; // Domyślnie dla poziomu 1
+        if (currentLevelNumber == 2) platName = "pliki/bloki2.png";
+        else if (currentLevelNumber == 3) platName = "pliki/blok3.png";
+
+        sf::Image platImage;
+        if (platImage.loadFromFile(platName)) {
+            platImage.createMaskFromColor(sf::Color::White);
+            platformTexture.loadFromImage(platImage);
+            platformTexture.setRepeated(true);
+        }
+
+        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, platformTexture, doorTexture, trapTexture);
         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
     }
 
@@ -165,9 +169,21 @@ bool PlayState::loadGame() {
         if (charIdx == 0) player->setColor(sf::Color::Red);
         else if (charIdx == 1) player->setColor(sf::Color::Green);
         else if (charIdx == 2) player->setColor(sf::Color::Blue);
+        
+        // --- Wybór tekstury klocków po wczytaniu zapisu z maskowaniem ---
+        std::string platName = "pliki/ground.png";
+        if (currentLevelNumber == 2) platName = "pliki/bloki2.png";
+        else if (currentLevelNumber == 3) platName = "pliki/blok3.png";
+        
+        sf::Image platImage;
+        if (platImage.loadFromFile(platName)) {
+            platImage.createMaskFromColor(sf::Color::White);
+            platformTexture.loadFromImage(platImage);
+            platformTexture.setRepeated(true);
+        }
 
-        // DODANO trapTexture
-        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture, doorTexture, trapTexture);
+        // Jedno poprawne wywołanie ładowania poziomu
+        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture);
 
         if (hasCheck) {
             for (auto& c : currentLevel.getCheckpoints()) {
@@ -394,8 +410,19 @@ StateAction PlayState::update(sf::Time dt) {
                 else {
                     std::string nextMap = "pliki/level" + std::to_string(currentLevelNumber) + ".txt";
 
-                    // DODANO trapTexture
-                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, groundTexture, doorTexture, trapTexture)) {
+                    // --- Zmiana tekstury klocków przy przejściu przez portal z maskowaniem ---
+                    std::string platName = "pliki/ground.png";
+                    if (currentLevelNumber == 2) platName = "pliki/bloki2.png";
+                    else if (currentLevelNumber == 3) platName = "pliki/blok3.png";
+
+                    sf::Image platImage;
+                    if (platImage.loadFromFile(platName)) {
+                        platImage.createMaskFromColor(sf::Color::White);
+                        platformTexture.loadFromImage(platImage);
+                        platformTexture.setRepeated(true);
+                    }
+
+                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, platformTexture, doorTexture, trapTexture)) {
                         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
                         player->resetCheckpoint();
                         backgroundTexture.loadFromFile("pliki/tlo" + std::to_string(currentLevelNumber) + ".png");
@@ -412,8 +439,8 @@ StateAction PlayState::update(sf::Time dt) {
             player->setHp(3);
             player->resetVelocity();
 
-            // DODANO trapTexture
-            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture, doorTexture, trapTexture);
+            // Ładowanie poprawnej tekstury klocków przy odrodzeniu
+            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture);
             player->setPosition(player->getCheckpointPos().x, player->getCheckpointPos().y);
 
             for (auto& c : currentLevel.getCheckpoints()) {
