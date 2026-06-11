@@ -49,6 +49,12 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     {
         std::cout << "Blad ladowania pliku pliki/mushroom.png!" << std::endl;
     }
+    //podłoga
+    if (!groundTexture.loadFromFile("pliki/ground.png")) 
+    {
+        std::cout << "Blad ladowania pliku pliki/ground.png!" << std::endl;
+    }
+    groundTexture.setRepeated(true);
     //dzwięk zabijania potwora
     if (stompBuffer.loadFromFile("pliki/stomp.ogg"))
     {
@@ -57,8 +63,9 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     }
     else
     {
-        std::cout << "Blad: Nie udalo sie wczytac pliki/stomp.wav!" << std::endl;
+        std::cout << "Blad: Nie udalo sie wczytac pliki/stomp.ogg!" << std::endl;
     }
+
     //dzwiek zjadania grzybów 
     if (powerupBuffer.loadFromFile("pliki/powerup.ogg"))
     {
@@ -85,8 +92,8 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
         if (characterIndex == 0) player->setColor(sf::Color::Red);
         else if (characterIndex == 1) player->setColor(sf::Color::Green);
         else if (characterIndex == 2) player->setColor(sf::Color::Blue);
-
-        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture);
+        //grzyby i ziemia
+        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, groundTexture);
         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
     }
 
@@ -149,7 +156,7 @@ bool PlayState::loadGame() {
         else if (charIdx == 1) player->setColor(sf::Color::Green);
         else if (charIdx == 2) player->setColor(sf::Color::Blue);
 
-        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture);
+        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture);
 
         if (!currentLevel.getBosses().empty()) {
             if (bossHp <= 0) currentLevel.getBosses().clear();
@@ -392,7 +399,7 @@ StateAction PlayState::update(sf::Time dt)
                 if (currentLevelNumber > 3) isGameWon = true;
                 else {
                     std::string nextMap = "pliki/level" + std::to_string(currentLevelNumber) + ".txt";
-                    if (currentLevel.loadFromFile(nextMap, mushroomTexture)) {
+                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, groundTexture)) {
                         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
                         player->resetCheckpoint();
                         backgroundTexture.loadFromFile("pliki/tlo" + std::to_string(currentLevelNumber) + ".png");
@@ -409,7 +416,7 @@ StateAction PlayState::update(sf::Time dt)
             player->setHp(3);
             player->resetVelocity();
 
-            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture);
+            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture);
             player->setPosition(player->getCheckpointPos().x, player->getCheckpointPos().y);
 
             for (auto& c : currentLevel.getCheckpoints()) {

@@ -37,7 +37,7 @@ public:
     Level() = default;
 
     //bool loadFromFile(const std::string& filename);
-    bool loadFromFile(const std::string& filename, const sf::Texture& mushroomTex);
+    bool loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& groundTex);
     const std::vector<sf::RectangleShape>& getPlatforms() const;
     sf::Vector2f getPlayerSpawn() const;
     void render(sf::RenderWindow& window);

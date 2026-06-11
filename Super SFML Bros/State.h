@@ -72,6 +72,8 @@ private:
     sf::Text gameWonText;
 	sf::Texture mushroomTexture;
     sf::Texture backgroundTexture;
+	//textura podłogi
+	sf::Texture groundTexture;
     sf::Sprite backgroundSprite;
 	//dzwiek zabijania potworów
 	sf::SoundBuffer stompBuffer;

@@ -1,6 +1,6 @@
 #include "Level.h"
 
-bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex)
+bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& groundTex)
 {
     platforms.clear();
     stars.clear();
@@ -38,7 +38,11 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
             {
                 sf::RectangleShape block;
                 block.setSize(sf::Vector2f(tile_size, tile_size));
-                block.setFillColor(sf::Color::Green);
+                //block.setFillColor(sf::Color::Green);
+                block.setFillColor(sf::Color::White); // Reset koloru na biały, żeby tekstura nie była zielona
+                block.setTexture(&groundTex);         // Przekazujemy adres naszej wygenerowanej tekstury
+                block.setTextureRect(sf::IntRect(0, 0, static_cast<int>(tile_size), static_cast<int>(tile_size)));
+
                 block.setPosition(x * tile_size, y * tile_size);
                 platforms.push_back(block);
             }
