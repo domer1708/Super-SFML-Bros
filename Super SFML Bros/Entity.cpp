@@ -19,6 +19,20 @@ Player::Player()
 	baseColor = sf::Color::Red;
 	shape.setFillColor(baseColor);
 	shape.setSize(sf::Vector2f(50.f, 50.f));
+	// ładowanie dzwięku przy skoku
+	if (jumpBuffer.loadFromFile("pliki/jump.ogg"))
+    {
+        jumpSound.setBuffer(jumpBuffer);
+        jumpSound.setVolume(40.f); // Ustawiamy 50% głośności na start
+		// to miało niby działać ale nie działa bo jest problem z opóznionym dzwiekiem
+		jumpSound.setVolume(0.f); // Wyciszamy całkowicie
+        jumpSound.play();         // Odpalamy "na sucho"
+        jumpSound.setVolume(50.f);
+    }
+    else
+    {
+        std::cout << "Blad: Nie udalo sie wczytac pliki/jump.wav" << std::endl;
+    }
 }
 
 void Player::setPosition(float x, float y)
@@ -35,6 +49,8 @@ void Player::handleEvent(sf::Event& event)
 		{
 			velocity.y = -600.f;
 			isJumping = true;
+            //audio
+			jumpSound.play();
 		}
 	}
 }

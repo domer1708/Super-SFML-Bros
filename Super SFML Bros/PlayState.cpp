@@ -49,6 +49,26 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     {
         std::cout << "Blad ladowania pliku pliki/mushroom.png!" << std::endl;
     }
+    //dzwięk zabijania potwora
+    if (stompBuffer.loadFromFile("pliki/stomp.ogg"))
+    {
+        stompSound.setBuffer(stompBuffer);
+        stompSound.setVolume(75.f); // Głośność na 60%
+    }
+    else
+    {
+        std::cout << "Blad: Nie udalo sie wczytac pliki/stomp.wav!" << std::endl;
+    }
+    //dzwiek zjadania grzybów 
+    if (powerupBuffer.loadFromFile("pliki/powerup.ogg"))
+    {
+        powerupSound.setBuffer(powerupBuffer);
+        powerupSound.setVolume(60.f); // 50% głośności na start
+    }
+    else
+    {
+        std::cout << "Blad: Nie udalo sie wczytac pliki/powerup.wav!" << std::endl;
+    }
     keyText.setFont(font);
     keyText.setCharacterSize(16);
     keyText.setFillColor(sf::Color(255, 215, 0)); // Złoty napis
@@ -280,7 +300,10 @@ StateAction PlayState::update(sf::Time dt)
         enemy.update(dt, currentLevel.getPlatforms());
         if (player->getGlobalBounds().intersects(enemy.getGlobalBounds())) {
             if (player->getVelocity().y > 0 && player->getGlobalBounds().top + player->getGlobalBounds().height < enemy.getGlobalBounds().top + enemy.getGlobalBounds().height / 2.f) {
-                enemy.die(); player->bounce(); player->incrementCombo();
+                enemy.die();
+                stompSound.play();
+                player->bounce(); 
+                player->incrementCombo();
                 int combo = player->getCombo();
                 if (combo == 1)      player->addScore(100);
                 else if (combo == 2) player->addScore(200);
@@ -304,6 +327,8 @@ StateAction PlayState::update(sf::Time dt)
         if (player->getGlobalBounds().intersects(boss.getGlobalBounds())) {
             if (player->getVelocity().y > 0 && player->getGlobalBounds().top + player->getGlobalBounds().height < boss.getGlobalBounds().top + 20.f) {
                 boss.takeDamage();
+                // opcjonalny dzwiek przy zabijaniu bosa
+                stompSound.play();
                 player->bounce();
                 player->addScore(300);
                 if (!boss.isAlive()) {
@@ -329,8 +354,12 @@ StateAction PlayState::update(sf::Time dt)
     starText.setString("Gwiazdki: " + std::to_string(player->getStarsCount()));
 
     for (auto& mushroom : currentLevel.getMushrooms()) {
-        if (!mushroom.isCollected() && player->getGlobalBounds().intersects(mushroom.getBounds())) {
-            mushroom.collect(); player->setSuper(true); player->setHp(player->getHp() + 1);
+        if (!mushroom.isCollected() && player->getGlobalBounds().intersects(mushroom.getBounds())) 
+        {
+            mushroom.collect(); 
+            powerupSound.play();
+            player->setSuper(true); 
+            player->setHp(player->getHp() + 1);
             if (player->getHp() > 3) player->setHp(3);
         }
     }

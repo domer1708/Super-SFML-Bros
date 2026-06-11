@@ -73,6 +73,11 @@ private:
 	sf::Texture mushroomTexture;
     sf::Texture backgroundTexture;
     sf::Sprite backgroundSprite;
+	//dzwiek zabijania potworów
+	sf::SoundBuffer stompBuffer;
+    sf::Sound stompSound;
+	sf::SoundBuffer powerupBuffer;
+    sf::Sound powerupSound;
 
     bool isGameOver;
     sf::Font font;

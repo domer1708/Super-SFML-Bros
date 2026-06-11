@@ -42,7 +42,8 @@
                 "-L", "C:\\SFML\\lib",
                 "-lsfml-graphics",
                 "-lsfml-window",
-                "-lsfml-system"
+                "-lsfml-system",
+                "-l", "sfml-audio"
             ],
             "options": {
                 "cwd": "${fileDirname}"

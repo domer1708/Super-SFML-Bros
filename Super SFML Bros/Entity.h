@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <vector>
-
+#include <SFML/Audio.hpp>
 class Entity // klasa bazowa postaci 
 {
 protected:
@@ -34,6 +34,9 @@ private:
 	bool hasKeyVar;
 	sf::Vector2f checkpointPosition;
 	bool hasActiveCheckpoint;
+	//audio
+	sf::SoundBuffer jumpBuffer;
+    sf::Sound jumpSound;
 
 public:
 	Player();
