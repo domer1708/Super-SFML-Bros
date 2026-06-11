@@ -36,7 +36,7 @@ public:
     // --- ZAKTUALIZOWANA DEKLARACJA ---
     // --- ZAKTUALIZOWANA DEKLARACJA ---
     bool loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& groundTex, const sf::Texture& doorTex, const sf::Texture& trapTex);
-
+    bool loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex);
     const std::vector<sf::RectangleShape>& getPlatforms() const;
     sf::Vector2f getPlayerSpawn() const;
     void render(sf::RenderWindow& window);
