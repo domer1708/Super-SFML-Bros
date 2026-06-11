@@ -42,6 +42,13 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     scoreText.setOutlineThickness(3.f); // Grubość obwódki
     scoreText.setString("Score: 0");
 
+    // ZEGAR
+    timerText.setFont(font);
+    timerText.setCharacterSize(16);
+    timerText.setFillColor(sf::Color(255, 215, 0));
+    timerText.setString("Czas: 0s");
+    totalTime=0.f;
+
     // =======================================================
     // --- NAPRAWA BIAŁEGO TŁA W TEKSTURACH ---
     // =======================================================
@@ -55,7 +62,7 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     {
         std::cout << "Blad ladowania pliku pliki/masrums.png!" << std::endl;
     }
-
+    
     sf::Image groundImage;
     if (groundImage.loadFromFile("pliki/ground.png"))
     {
@@ -127,7 +134,8 @@ void PlayState::saveGame() {
             << player->hasCheckpoint() << "\n"
             << player->getCheckpointPos().x << "\n" << player->getCheckpointPos().y << "\n"
             << player->getPosition().x << "\n" << player->getPosition().y << "\n"
-            << bossHp << "\n";
+            << bossHp << "\n"
+            << totalTime << "\n";
 
         file.close();
         if (pauseMenu) pauseMenu->setItemText(1, "ZAPISANO!");
@@ -141,7 +149,7 @@ bool PlayState::loadGame() {
         bool hasKey, hasCheck;
         float cx, cy, px, py;
 
-        file >> lvl >> charIdx >> hp >> score >> stars >> hasKey >> hasCheck >> cx >> cy >> px >> py >> bossHp;
+        file >> lvl >> charIdx >> hp >> score >> stars >> hasKey >> hasCheck >> cx >> cy >> px >> py >> bossHp >> totalTime;
         file.close();
 
         currentLevelNumber = lvl; currentCharacterIndex = charIdx;
@@ -210,13 +218,19 @@ StateAction PlayState::handleEvent(sf::Event& event)
 StateAction PlayState::update(sf::Time dt)
 {
     if (isGameOver || isGameWon || isPaused) return StateAction::Keep;
-
     // --- ZABEZPIECZENIE PRZED LAGIEM (TUNELOWANIEM) NA STARCIE ---
     // Jeśli komputer zamrozi się na ładowaniu (np. dt > 0.05 sekundy),
     // ucinamy czas, aby gracz nie spadł pod podłogę z wielką prędkością.
-    if (dt.asSeconds() > 0.05f) {
+    if (dt.asSeconds() > 0.05f) 
+    {
         dt = sf::seconds(0.05f);
     }
+    totalTime += dt.asSeconds(); // Dodajemy czas, który upłynął w tej klatce
+    
+    int seconds = static_cast<int>(totalTime);
+    timerText.setString("CZAS: " + std::to_string(seconds) + "S");
+    timerText.setPosition(800.f - timerText.getGlobalBounds().width - 20.f, 550.f);
+
 
     // 0. Aktualizacja wewnętrzna poziomu
     currentLevel.updateLevelElements(dt);
@@ -235,8 +249,10 @@ StateAction PlayState::update(sf::Time dt)
     sf::FloatRect iceFeet = player->getGlobalBounds();
     iceFeet.top += 2.f;
     bool onIce = false;
-    for (const auto& ice : currentLevel.getIceBlocks()) {
-        if (iceFeet.intersects(ice.getGlobalBounds())) {
+    for (const auto& ice : currentLevel.getIceBlocks()) 
+    {
+        if (iceFeet.intersects(ice.getGlobalBounds())) 
+        {
             onIce = true;
             break;
         }
@@ -482,4 +498,5 @@ void PlayState::render(sf::RenderWindow& window)
         resetText.setPosition(400.f - resetText.getGlobalBounds().width / 2.f, 320.f);
         window.draw(gameWonText); window.draw(resetText);
     }
+    window.draw(timerText);
 }

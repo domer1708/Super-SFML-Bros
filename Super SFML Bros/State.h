@@ -88,6 +88,10 @@ private:
     sf::Text scoreText;
     // Logika pauzy
     std::unique_ptr<PauseMenu> pauseMenu;
+    //zegar
+    sf::Text timerText;     // Obiekt do wyświetlania tekstu czasu
+    sf::Clock gameClock;
+    float totalTime;    // Zegar, który mierzy czas od uruchomienia stanu
     bool isPaused;
     sf::Text keyText;
 
