@@ -23,8 +23,18 @@ Player::Player()
     shape.setSize(sf::Vector2f(50.f, 50.f));
 
     // --- ŁADOWANIE GRAFIKI MARIO ---
-    sf::Image image;
-    if (image.loadFromFile("pliki/mario.png"))
+    // --- ŁADOWANIE OSOBNYCH KLATEK ---
+    // Ładujemy pliki (zakładam, że mają białe tło, które trzeba usunąć)
+    sf::Image imgStand, imgW1, imgW2, imgW3, imgJump;
+    
+    if (imgStand.loadFromFile("pliki/stand.png")) { imgStand.createMaskFromColor(sf::Color::White); texStand.loadFromImage(imgStand); }
+    if (imgW1.loadFromFile("pliki/walk1.png")) { imgW1.createMaskFromColor(sf::Color::White); texWalk1.loadFromImage(imgW1); }
+    if (imgW2.loadFromFile("pliki/walk2.png")) { imgW2.createMaskFromColor(sf::Color::White); texWalk2.loadFromImage(imgW2); }
+    if (imgW3.loadFromFile("pliki/walk3.png")) { imgW3.createMaskFromColor(sf::Color::White); texWalk3.loadFromImage(imgW3); }
+    if (imgJump.loadFromFile("pliki/jump.png")) { imgJump.createMaskFromColor(sf::Color::White); texJump.loadFromImage(imgJump); }
+
+    // Ustawiamy domyślną teksturę na stanie
+    sprite.setTexture(texStand);
     {
         image.createMaskFromColor(sf::Color::White);
 
