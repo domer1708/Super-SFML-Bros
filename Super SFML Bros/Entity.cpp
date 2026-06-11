@@ -40,7 +40,7 @@ Player::Player()
     loadTexture(imgW1, texWalk1, "pliki/mario_walk1.png");
     loadTexture(imgW2, texWalk2, "pliki/mario_walk2.png");
     loadTexture(imgW3, texWalk3, "pliki/mario_walk3.png");
-    loadTexture(imgJump, texJump, "pliki/marioj_jump.png");
+    loadTexture(imgJump, texJump, "pliki/mario_jump.png");
 
     // Ustawiamy domyślną teksturę na stanie
     sprite.setTexture(texStand);
