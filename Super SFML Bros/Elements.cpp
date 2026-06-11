@@ -56,23 +56,33 @@ bool Star::isCollected() const
     return collected;
 }
 
-Trap::Trap(float x, float y)
+Trap::Trap(float x, float y, const sf::Texture& tex)
 {
-    shape.setRadius(20.f);
-    shape.setPointCount(3);
-    shape.setFillColor(sf::Color(150, 150, 150));
-    shape.setPosition(x + 5.f, y + 10.f);
+    sprite.setTexture(tex);
+
+    // Dopasowanie rozmiaru kolca do klocka 50x50
+    float scaleX = 50.f / tex.getSize().x;
+    float scaleY = 50.f / tex.getSize().y;
+    sprite.setScale(scaleX, scaleY);
+    sprite.setPosition(x, y);
+
+    // Hitbox (żebyś nie obrywał od pustego powietrza na krawędziach)
+    // Zmniejszamy pole kolizji tylko do samego środka i dołu kolca
+    hitbox.setSize(sf::Vector2f(20.f, 30.f));
+    hitbox.setPosition(x + 15.f, y + 20.f);
+    hitbox.setFillColor(sf::Color::Transparent); // Hitbox jest niewidzialny
+
     damage = 1;
 }
 
 void Trap::render(sf::RenderWindow& window)
 {
-    window.draw(shape);
+    window.draw(sprite); // Rysujemy grafikę
 }
 
 sf::FloatRect Trap::getBounds() const
 {
-    return shape.getGlobalBounds();
+    return hitbox.getGlobalBounds(); // Gra sprawdza kolizję z węższym hitboxem!
 }
 
 int Trap::getDamage() const

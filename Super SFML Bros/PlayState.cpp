@@ -19,37 +19,35 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
 
     font.loadFromFile("pliki/PressStart2P-Regular.ttf");
 
-    // Konfiguracja Napisów
     gameOverText.setFont(font);
     gameOverText.setString("GAME OVER");
     gameOverText.setCharacterSize(60);
     gameOverText.setFillColor(sf::Color::Red);
     gameOverText.setStyle(sf::Text::Bold);
+
     gameWonText.setFont(font);
     gameWonText.setString("WYGRALES GRE!");
     gameWonText.setCharacterSize(60);
     gameWonText.setFillColor(sf::Color::Yellow);
     gameWonText.setStyle(sf::Text::Bold);
+
     resetText.setFont(font); resetText.setString("Wcisnij ESC, aby wrocic do menu");
     resetText.setCharacterSize(20);
     resetText.setFillColor(sf::Color::White);
 
-    // --- HUD PUNKTÓW (SCORE) ---
     scoreText.setFont(font);
     scoreText.setCharacterSize(24);
-    scoreText.setFillColor(sf::Color::Yellow); // Złoto-żółty kolor
-    scoreText.setOutlineColor(sf::Color::Black); // Czarna obwódka dla super czytelności
-    scoreText.setOutlineThickness(3.f); // Grubość obwódki
+    scoreText.setFillColor(sf::Color::Yellow);
+    scoreText.setOutlineColor(sf::Color::Black);
+    scoreText.setOutlineThickness(3.f);
     scoreText.setString("Score: 0");
 
-    // ZEGAR
     timerText.setFont(font);
     timerText.setCharacterSize(16);
     timerText.setFillColor(sf::Color(255, 215, 0));
     timerText.setString("Czas: 0s");
     totalTime = 0.f;
 
-    // Licznik smierci
     deathCount = 0;
     deathText.setFont(font);
     deathText.setCharacterSize(16);
@@ -61,58 +59,56 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     // --- ŁADOWANIE TEKSTUR I USUWANIE TŁA ---
     // =======================================================
     sf::Image mushroomImage;
-    if (mushroomImage.loadFromFile("pliki/masrums.png"))
-    {
+    if (mushroomImage.loadFromFile("pliki/masrums.png")) {
         mushroomImage.createMaskFromColor(sf::Color::White);
         mushroomTexture.loadFromImage(mushroomImage);
     }
-    else std::cout << "Blad ladowania pliku pliki/masrums.png!" << std::endl;
 
     sf::Image groundImage;
-    if (groundImage.loadFromFile("pliki/ground.png"))
-    {
+    if (groundImage.loadFromFile("pliki/ground.png")) {
         groundImage.createMaskFromColor(sf::Color::White);
         groundTexture.loadFromImage(groundImage);
         groundTexture.setRepeated(true);
     }
-    else std::cout << "Blad ladowania pliku pliki/ground.png!" << std::endl;
 
-    // --- TEKSTURA DRZWI (USUWANIE CZARNEGO TŁA) ---
     sf::Image doorImage;
-    if (doorImage.loadFromFile("pliki/door.png"))
-    {
-        // Wymazujemy idealnie czarny kolor!
+    if (doorImage.loadFromFile("pliki/door.png")) {
         doorImage.createMaskFromColor(sf::Color::Black);
         doorTexture.loadFromImage(doorImage);
     }
-    else std::cout << "Blad ladowania pliku pliki/door.png!" << std::endl;
+
+    // --- TEKSTURA PUŁAPKI (USUWANIE ZIELONEGO TŁA) ---
+    sf::Image trapImage;
+    if (trapImage.loadFromFile("pliki/spike.png")) {
+        // Większość spritesheetów używa czystego zielonego (0, 255, 0) jako tła maskującego
+        trapImage.createMaskFromColor(sf::Color(0, 255, 0));
+        trapTexture.loadFromImage(trapImage);
+    }
+    else {
+        std::cout << "Blad ladowania pliku pliki/spike.png!" << std::endl;
+    }
     // =======================================================
 
-    // Dźwięki
-    if (stompBuffer.loadFromFile("pliki/stomp.ogg"))
-    {
+    if (stompBuffer.loadFromFile("pliki/stomp.ogg")) {
         stompSound.setBuffer(stompBuffer);
         stompSound.setVolume(75.f);
     }
 
-    if (powerupBuffer.loadFromFile("pliki/powerup.ogg"))
-    {
+    if (powerupBuffer.loadFromFile("pliki/powerup.ogg")) {
         powerupSound.setBuffer(powerupBuffer);
         powerupSound.setVolume(60.f);
     }
 
     bool loaded = false;
-    if (loadFromSave)
-    {
-        loaded = loadGame();
-    }
+    if (loadFromSave) loaded = loadGame();
 
     if (!loaded) {
         if (characterIndex == 0) player->setColor(sf::Color::Red);
         else if (characterIndex == 1) player->setColor(sf::Color::Green);
         else if (characterIndex == 2) player->setColor(sf::Color::Blue);
 
-        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, groundTexture, doorTexture);
+        // DODANO trapTexture
+        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, groundTexture, doorTexture, trapTexture);
         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
     }
 
@@ -121,24 +117,19 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     pauseMenu = std::make_unique<PauseMenu>(font);
 
     std::string bgName = "pliki/tlo" + std::to_string(currentLevelNumber) + ".png";
-    if (!backgroundTexture.loadFromFile(bgName))
-    {
-        std::cout << "Blad ladowania pliku " << bgName << "!" << std::endl;
+    if (backgroundTexture.loadFromFile(bgName)) {
+        backgroundSprite.setTexture(backgroundTexture);
+        float scaleX = 800.f / backgroundTexture.getSize().x;
+        float scaleY = 600.f / backgroundTexture.getSize().y;
+        backgroundSprite.setScale(scaleX, scaleY);
     }
-    backgroundSprite.setTexture(backgroundTexture);
-
-    float scaleX = 800.f / backgroundTexture.getSize().x;
-    float scaleY = 600.f / backgroundTexture.getSize().y;
-    backgroundSprite.setScale(scaleX, scaleY);
 }
 
 void PlayState::saveGame() {
     std::ofstream file("pliki/zapis.txt");
     if (file.is_open()) {
         int bossHp = 0;
-        if (!currentLevel.getBosses().empty()) {
-            bossHp = currentLevel.getBosses()[0].getHp();
-        }
+        if (!currentLevel.getBosses().empty()) bossHp = currentLevel.getBosses()[0].getHp();
 
         file << currentLevelNumber << "\n" << currentCharacterIndex << "\n"
             << player->getHp() << "\n" << player->getScore() << "\n"
@@ -175,13 +166,12 @@ bool PlayState::loadGame() {
         else if (charIdx == 1) player->setColor(sf::Color::Green);
         else if (charIdx == 2) player->setColor(sf::Color::Blue);
 
-        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture, doorTexture);
+        // DODANO trapTexture
+        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture, doorTexture, trapTexture);
 
         if (hasCheck) {
             for (auto& c : currentLevel.getCheckpoints()) {
-                if (std::abs(c.getBounds().left - cx) < 10.f) {
-                    c.activate();
-                }
+                if (std::abs(c.getBounds().left - cx) < 10.f) c.activate();
             }
         }
 
@@ -198,15 +188,12 @@ bool PlayState::loadGame() {
     return false;
 }
 
-StateAction PlayState::handleEvent(sf::Event& event)
-{
+StateAction PlayState::handleEvent(sf::Event& event) {
     if (event.type == sf::Event::KeyPressed) {
         if (event.key.code == sf::Keyboard::Escape) {
             if (!isGameOver && !isGameWon) {
                 isPaused = !isPaused;
-                if (isPaused) {
-                    pauseMenu->setItemText(1, "Zapisz Gre");
-                }
+                if (isPaused) pauseMenu->setItemText(1, "Zapisz Gre");
             }
             else return StateAction::Menu;
         }
@@ -228,43 +215,31 @@ StateAction PlayState::handleEvent(sf::Event& event)
     return StateAction::Keep;
 }
 
-StateAction PlayState::update(sf::Time dt)
-{
+StateAction PlayState::update(sf::Time dt) {
     if (isGameOver || isGameWon || isPaused) return StateAction::Keep;
 
-    // --- ZABEZPIECZENIE PRZED LAGIEM (TUNELOWANIEM) NA STARCIE ---
-    if (dt.asSeconds() > 0.05f)
-    {
-        dt = sf::seconds(0.05f);
-    }
-    totalTime += dt.asSeconds(); // Dodajemy czas, który upłynął w tej klatce
+    if (dt.asSeconds() > 0.05f) dt = sf::seconds(0.05f);
+    totalTime += dt.asSeconds();
 
     int seconds = static_cast<int>(totalTime);
     timerText.setString("CZAS: " + std::to_string(seconds) + "S");
     timerText.setPosition(800.f - timerText.getGlobalBounds().width - 20.f, 550.f);
 
-
-    // 0. Aktualizacja wewnętrzna poziomu
     currentLevel.updateLevelElements(dt);
 
     std::vector<sf::RectangleShape> solidBlocks = currentLevel.getPlatforms();
     for (const auto& vp : currentLevel.getVanishingPlatforms()) {
         if (vp.isSolid()) solidBlocks.push_back(vp.getShape());
     }
-    for (const auto& mp : currentLevel.getMovingPlatforms()) {
-        solidBlocks.push_back(mp.getShape());
-    }
+    for (const auto& mp : currentLevel.getMovingPlatforms()) solidBlocks.push_back(mp.getShape());
     for (const auto& ice : currentLevel.getIceBlocks()) solidBlocks.push_back(ice);
     for (const auto& v : currentLevel.getElevators()) solidBlocks.push_back(v.getShape());
 
-    // --- SYSTEM ŚLISKIEJ PODŁOGI (LÓD) ---
     sf::FloatRect iceFeet = player->getGlobalBounds();
     iceFeet.top += 2.f;
     bool onIce = false;
-    for (const auto& ice : currentLevel.getIceBlocks())
-    {
-        if (iceFeet.intersects(ice.getGlobalBounds()))
-        {
+    for (const auto& ice : currentLevel.getIceBlocks()) {
+        if (iceFeet.intersects(ice.getGlobalBounds())) {
             onIce = true;
             break;
         }
@@ -272,10 +247,6 @@ StateAction PlayState::update(sf::Time dt)
     if (onIce) player->setFriction(0.5f);
     else player->setFriction(8.f);
 
-
-    // =====================================================================
-    // --- PRZYKLEJANIE DO PLATFORM ---
-    // =====================================================================
     sf::FloatRect pBounds = player->getGlobalBounds();
     bool onMovingPlatform = false;
 
@@ -303,25 +274,18 @@ StateAction PlayState::update(sf::Time dt)
             }
         }
     }
-    // =====================================================================
 
     player->update(dt, solidBlocks);
+    if (onMovingPlatform) player->resetJumping();
 
-    if (onMovingPlatform) {
-        player->resetJumping();
-    }
-
-    // --- ZNIKAJĄCE PLATFORMY ---
     sf::FloatRect vanishFeet = player->getGlobalBounds();
     vanishFeet.height += 2.f;
-
     for (auto& vp : currentLevel.getVanishingPlatforms()) {
         if (vp.isSolid() && vanishFeet.intersects(vp.getBounds())) {
             if (player->getVelocity().y >= 0) vp.trigger();
         }
     }
 
-    // --- CHECKPOINTY ---
     for (auto& c : currentLevel.getCheckpoints()) {
         if (!c.isActivated() && player->getGlobalBounds().intersects(c.getBounds())) {
             c.activate();
@@ -329,7 +293,6 @@ StateAction PlayState::update(sf::Time dt)
         }
     }
 
-    // --- WIEŻYCZKI ---
     for (auto& b : currentLevel.getBullets()) {
         if (b.isAlive() && player->getGlobalBounds().intersects(b.getBounds())) {
             b.destroy();
@@ -337,13 +300,11 @@ StateAction PlayState::update(sf::Time dt)
         }
     }
 
-    // --- KAMERA ---
     sf::Vector2f playerPos = player->getPosition();
     float maxCameraY = 300.f;
     if (playerPos.y < maxCameraY) camera.setCenter(playerPos.x, playerPos.y);
     else camera.setCenter(playerPos.x, maxCameraY);
 
-    // --- POTWORY ---
     auto& levelEnemies = currentLevel.getEnemies();
     for (auto& enemy : levelEnemies) {
         if (!enemy.isAlive()) continue;
@@ -367,7 +328,6 @@ StateAction PlayState::update(sf::Time dt)
     }
     levelEnemies.erase(std::remove_if(levelEnemies.begin(), levelEnemies.end(), [](const Enemy& e) { return !e.isAlive(); }), levelEnemies.end());
 
-    // --- BOSS ---
     auto& levelBosses = currentLevel.getBosses();
     for (auto& boss : levelBosses) {
         if (!boss.isAlive()) continue;
@@ -384,14 +344,11 @@ StateAction PlayState::update(sf::Time dt)
                     currentLevel.getKeys().push_back(Key(boss.getGlobalBounds().left, boss.getGlobalBounds().top));
                 }
             }
-            else {
-                player->takeDamage(1);
-            }
+            else player->takeDamage(1);
         }
     }
     levelBosses.erase(std::remove_if(levelBosses.begin(), levelBosses.end(), [](const Boss& b) { return !b.isAlive(); }), levelBosses.end());
 
-    // --- ZNAJDŹKI ---
     currentLevel.removeCollectedStars();
     for (auto& star : currentLevel.getStars()) {
         if (!star.isCollected() && player->getGlobalBounds().intersects(star.getBounds())) {
@@ -400,8 +357,7 @@ StateAction PlayState::update(sf::Time dt)
     }
 
     for (auto& mushroom : currentLevel.getMushrooms()) {
-        if (!mushroom.isCollected() && player->getGlobalBounds().intersects(mushroom.getBounds()))
-        {
+        if (!mushroom.isCollected() && player->getGlobalBounds().intersects(mushroom.getBounds())) {
             mushroom.collect();
             powerupSound.play();
             player->setSuper(true);
@@ -421,7 +377,6 @@ StateAction PlayState::update(sf::Time dt)
         }
     }
 
-    // --- KLUCZE I PORTAL ---
     currentLevel.removeCollectedKeys();
     for (auto& key : currentLevel.getKeys()) {
         if (!key.isCollected() && player->getGlobalBounds().intersects(key.getBounds())) {
@@ -439,8 +394,8 @@ StateAction PlayState::update(sf::Time dt)
                 else {
                     std::string nextMap = "pliki/level" + std::to_string(currentLevelNumber) + ".txt";
 
-                    // Załaduj z teksturą drzwi
-                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, groundTexture, doorTexture)) {
+                    // DODANO trapTexture
+                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, groundTexture, doorTexture, trapTexture)) {
                         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
                         player->resetCheckpoint();
                         backgroundTexture.loadFromFile("pliki/tlo" + std::to_string(currentLevelNumber) + ".png");
@@ -450,38 +405,28 @@ StateAction PlayState::update(sf::Time dt)
         }
     }
 
-    if (!player->isAlive() || player->getPosition().y > 750.f)
-    {
-        // licznik śmierci zwiększający sie 
+    if (!player->isAlive() || player->getPosition().y > 750.f) {
         deathCount++;
         deathText.setString("ZGONY: " + std::to_string(deathCount));
-        if (player->hasCheckpoint())
-        {
+        if (player->hasCheckpoint()) {
             player->setHp(3);
             player->resetVelocity();
 
-            // Odrodzenie z teksturą drzwi
-            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture, doorTexture);
+            // DODANO trapTexture
+            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture, doorTexture, trapTexture);
             player->setPosition(player->getCheckpointPos().x, player->getCheckpointPos().y);
 
             for (auto& c : currentLevel.getCheckpoints()) {
-                if (std::abs(c.getBounds().left - player->getCheckpointPos().x) < 10.f)
-                {
-                    c.activate();
-                }
+                if (std::abs(c.getBounds().left - player->getCheckpointPos().x) < 10.f) c.activate();
             }
         }
-        else
-        {
-            isGameOver = true;
-        }
+        else isGameOver = true;
     }
 
     return StateAction::Keep;
 }
 
-void PlayState::render(sf::RenderWindow& window)
-{
+void PlayState::render(sf::RenderWindow& window) {
     window.setView(window.getDefaultView());
     window.draw(backgroundSprite);
     window.setView(camera);
@@ -497,21 +442,18 @@ void PlayState::render(sf::RenderWindow& window)
         window.draw(heartShape);
     }
 
-    // --- SCORE WYZŚRODKOWANE I POGRUBIONE ---
     scoreText.setString("Score: " + std::to_string(player->getScore()));
     scoreText.setPosition(400.f - scoreText.getGlobalBounds().width / 2.f, 20.f);
     window.draw(scoreText);
 
     if (isPaused) pauseMenu->render(window);
-    if (isGameOver)
-    {
+    if (isGameOver) {
         gameOverText.setPosition(400.f - gameOverText.getGlobalBounds().width / 2.f, 240.f);
         resetText.setPosition(400.f - resetText.getGlobalBounds().width / 2.f, 320.f);
         window.draw(gameOverText);
         window.draw(resetText);
     }
-    else if (isGameWon)
-    {
+    else if (isGameWon) {
         gameWonText.setPosition(400.f - gameWonText.getGlobalBounds().width / 2.f, 240.f);
         resetText.setPosition(400.f - resetText.getGlobalBounds().width / 2.f, 320.f);
         window.draw(gameWonText); window.draw(resetText);

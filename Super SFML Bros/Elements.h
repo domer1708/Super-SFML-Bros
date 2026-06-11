@@ -19,16 +19,15 @@ public:
     bool isCollected() const;
 };
 
-// --- KLASA PUŁAPKI (KOLCÓW) ---
 class Trap
 {
 private:
-    sf::CircleShape shape;
+    sf::Sprite sprite;
+    sf::RectangleShape hitbox; // Niewidzialny kształt raniący gracza
     int damage;
-
 public:
-    Trap(float x, float y);
-
+    // Zmieniony konstruktor - przyjmuje teksturę!
+    Trap(float x, float y, const sf::Texture& tex);
     void render(sf::RenderWindow& window);
     sf::FloatRect getBounds() const;
     int getDamage() const;

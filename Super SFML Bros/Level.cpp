@@ -1,6 +1,6 @@
 #include "Level.h"
 
-bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& groundTex, const sf::Texture& doorTex)
+bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& groundTex, const sf::Texture& doorTex, const sf::Texture& trapTex)
 {
     platforms.clear();
     stars.clear();
@@ -47,7 +47,7 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
             }
             else if (tile == 'P') playerSpawnPosition = sf::Vector2f(x * tile_size, y * tile_size);
             else if (tile == 'S') stars.push_back(Star(x * tile_size, y * tile_size));
-            else if (tile == '^') traps.push_back(Trap(x * tile_size, y * tile_size));
+            else if (tile == '^') traps.push_back(Trap(x * tile_size, y * tile_size, trapTex));
             else if (tile == 'F') portals.push_back(Portal(x * tile_size, y * tile_size, doorTex, true));
             else if (tile == 'T') trampolines.push_back(Trampoline(x * tile_size, y * tile_size));
             else if (tile == 'K') keys.push_back(Key(x * tile_size, y * tile_size));
