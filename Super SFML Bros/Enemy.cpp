@@ -63,25 +63,32 @@ Boss::Boss(float startX, float startY) {
 }
 
 void Boss::updateBoss(sf::Time dt, const std::vector<sf::RectangleShape>& platforms, sf::Vector2f playerPos) {
-    timer += dt.asSeconds();
-    velocity.y += 1000.f * dt.asSeconds(); // Grawitacja dla Bossa
+    velocity.y += 1000.f * dt.asSeconds(); // Grawitacja
 
-    // Maszyna Stanów
-    if (state == 0) { // Odpoczywa
-        velocity.x = 0;
-        if (timer > 2.0f) { // Co 2 sekundy atakuje
-            state = 1;
-            timer = 0.f;
-            // Sprawdza, gdzie jest gracz i biegnie w jego stronę
-            if (playerPos.x > position.x) velocity.x = speed;
-            else velocity.x = -speed;
+    // --- POPRAWKA 1: BOSS ZASYPIA, GDY JESTEŚ DALEKO ---
+    float distanceToPlayer = std::abs(playerPos.x - position.x);
+    if (distanceToPlayer < 800.f) { // Budzi się, gdy gracz jest na tym samym ekranie
+        timer += dt.asSeconds();
+
+        // Maszyna Stanów
+        if (state == 0) { // Odpoczywa
+            velocity.x = 0;
+            if (timer > 2.0f) { // Co 2 sekundy atakuje
+                state = 1;
+                timer = 0.f;
+                if (playerPos.x > position.x) velocity.x = speed;
+                else velocity.x = -speed;
+            }
+        }
+        else if (state == 1) { // Szarżuje
+            if (timer > 1.5f) { // Szarża trwa 1.5 sekundy
+                state = 0;
+                timer = 0.f;
+            }
         }
     }
-    else if (state == 1) { // Szarżuje
-        if (timer > 1.5f) { // Szarża trwa 1.5 sekundy
-            state = 0;
-            timer = 0.f;
-        }
+    else {
+        velocity.x = 0.f; // Boss stoi i czeka, nie popełnia samobójstwa!
     }
 
     // Ruch X i kolizje
@@ -101,7 +108,8 @@ void Boss::updateBoss(sf::Time dt, const std::vector<sf::RectangleShape>& platfo
     shape.setPosition(position);
     for (const auto& platform : platforms) {
         if (shape.getGlobalBounds().intersects(platform.getGlobalBounds())) {
-            if (velocity.y > 0) position.y = platform.getGlobalBounds().top - shape.getGlobalBounds().height;
+            // --- POPRAWKA 2: UNIKANIE ZACINANIA SIĘ O KLOCKI (-0.1f) ---
+            if (velocity.y > 0) position.y = platform.getGlobalBounds().top - shape.getGlobalBounds().height - 0.1f;
             else if (velocity.y < 0) position.y = platform.getGlobalBounds().top + platform.getGlobalBounds().height;
             velocity.y = 0.f;
             shape.setPosition(position);

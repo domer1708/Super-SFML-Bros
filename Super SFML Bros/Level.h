@@ -1,10 +1,7 @@
 #pragma once
-
 #include "Elements.h"
 #include "Enemy.h"
 #include <SFML/Graphics.hpp>
-#include <SFML/Graphics/Font.hpp>
-#include <SFML/Graphics/RectangleShape.hpp>
 #include <memory>
 #include <vector>
 #include <string>
@@ -30,14 +27,15 @@ private:
     std::vector<sf::RectangleShape> iceBlocks;
     std::vector<Elevator> elevators;
     std::vector<Boss> bosses;
-    sf::Vector2f playerSpawnPosition;      
+    sf::Vector2f playerSpawnPosition;
     static constexpr float tile_size = 50.f;
 
 public:
     Level() = default;
 
-    //bool loadFromFile(const std::string& filename);
+    // --- ZAKTUALIZOWANA DEKLARACJA ---
     bool loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& groundTex);
+
     const std::vector<sf::RectangleShape>& getPlatforms() const;
     sf::Vector2f getPlayerSpawn() const;
     void render(sf::RenderWindow& window);

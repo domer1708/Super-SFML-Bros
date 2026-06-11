@@ -19,7 +19,7 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
 
     font.loadFromFile("pliki/PressStart2P-Regular.ttf");
 
-    // Konfiguracja Napisów (Game Over itp.)
+    // Konfiguracja Napisów
     gameOverText.setFont(font);
     gameOverText.setString("GAME OVER");
     gameOverText.setCharacterSize(60);
@@ -40,67 +40,69 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     starText.setFillColor(sf::Color::Yellow);
     starText.setPosition(420.f, 20.f); // Prawy górny róg
     starText.setString("Gwiazdki: 0");
+
     // --- HUD PUNKTÓW (SCORE) ---
     scoreText.setFont(font);
     scoreText.setCharacterSize(16);
-    scoreText.setFillColor(sf::Color::White); // Biały tekst, ładnie odetnie się od żółtych gwiazdek
+    scoreText.setFillColor(sf::Color::White);
     scoreText.setString("Score: 000000");
+
     if (!mushroomTexture.loadFromFile("pliki/masrums.png"))
     {
         std::cout << "Blad ladowania pliku pliki/mushroom.png!" << std::endl;
     }
-    //podłoga
-    if (!groundTexture.loadFromFile("pliki/ground.png")) 
+
+    // Podłoga
+    if (!groundTexture.loadFromFile("pliki/ground.png"))
     {
         std::cout << "Blad ladowania pliku pliki/ground.png!" << std::endl;
     }
     groundTexture.setRepeated(true);
-    //dzwięk zabijania potwora
+
+    // Dźwięk zabijania potwora
     if (stompBuffer.loadFromFile("pliki/stomp.ogg"))
     {
         stompSound.setBuffer(stompBuffer);
-        stompSound.setVolume(75.f); // Głośność na 60%
+        stompSound.setVolume(75.f);
     }
     else
     {
         std::cout << "Blad: Nie udalo sie wczytac pliki/stomp.ogg!" << std::endl;
     }
 
-    //dzwiek zjadania grzybów 
+    // Dźwięk zjadania grzybów 
     if (powerupBuffer.loadFromFile("pliki/powerup.ogg"))
     {
         powerupSound.setBuffer(powerupBuffer);
-        powerupSound.setVolume(60.f); // 50% głośności na start
+        powerupSound.setVolume(60.f);
     }
     else
     {
-        std::cout << "Blad: Nie udalo sie wczytac pliki/powerup.wav!" << std::endl;
+        std::cout << "Blad: Nie udalo sie wczytac pliki/powerup.ogg!" << std::endl;
     }
+
     keyText.setFont(font);
     keyText.setCharacterSize(16);
-    keyText.setFillColor(sf::Color(255, 215, 0)); // Złoty napis
+    keyText.setFillColor(sf::Color(255, 215, 0));
     keyText.setPosition(650.f, 60.f);
-    // Próba wczytania z menu głównego
+
     bool loaded = false;
     if (loadFromSave)
     {
         loaded = loadGame();
     }
 
-    // Jeśli nowa gra, lub brak zapisu (fallback)
     if (!loaded) {
         if (characterIndex == 0) player->setColor(sf::Color::Red);
         else if (characterIndex == 1) player->setColor(sf::Color::Green);
         else if (characterIndex == 2) player->setColor(sf::Color::Blue);
-        //grzyby i ziemia
+
         currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, groundTexture);
         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
     }
 
-    // Geometria serca
     heartShape.setPointCount(6); heartShape.setPoint(0, sf::Vector2f(20.f, 10.f)); heartShape.setPoint(1, sf::Vector2f(30.f, 0.f)); heartShape.setPoint(2, sf::Vector2f(40.f, 12.f)); heartShape.setPoint(3, sf::Vector2f(20.f, 38.f)); heartShape.setPoint(4, sf::Vector2f(0.f, 12.f)); heartShape.setPoint(5, sf::Vector2f(10.f, 0.f));
 
-    // Menu pauzy
     pauseMenu = std::make_unique<PauseMenu>(font);
 
     std::string bgName = "pliki/tlo" + std::to_string(currentLevelNumber) + ".png";
@@ -175,7 +177,13 @@ StateAction PlayState::handleEvent(sf::Event& event)
 {
     if (event.type == sf::Event::KeyPressed) {
         if (event.key.code == sf::Keyboard::Escape) {
-            if (!isGameOver && !isGameWon) isPaused = !isPaused;
+            if (!isGameOver && !isGameWon) {
+                isPaused = !isPaused;
+                // --- POPRAWKA: RESETOWANIE NAPISU PO OTWARCIU PAUZY ---
+                if (isPaused) {
+                    pauseMenu->setItemText(1, "Zapisz Gre");
+                }
+            }
             else return StateAction::Menu;
         }
 
@@ -228,47 +236,46 @@ StateAction PlayState::update(sf::Time dt)
 
 
     // =====================================================================
-    // --- PRZYKLEJANIE DO PLATFORM (ZANIM ZADZIAŁA FIZYKA GRACZA) ---
+    // --- PRZYKLEJANIE DO PLATFORM ---
     // =====================================================================
     sf::FloatRect pBounds = player->getGlobalBounds();
+    bool onMovingPlatform = false; // FLAGA DO SKAKANIA Z PLATFORMY
 
-    // 1. Jazda na platformie poziomej
     for (const auto& mp : currentLevel.getMovingPlatforms()) {
         sf::FloatRect mBounds = mp.getBounds();
-
-        // Zawężamy tolerancję bocznego łapania platformy
         if (pBounds.left + pBounds.width - 4.f > mBounds.left && pBounds.left + 4.f < mBounds.left + mBounds.width) {
             if (std::abs((pBounds.top + pBounds.height) - mBounds.top) < 20.f && player->getVelocity().y >= 0.f) {
-                // -0.1f niweluje problem kolizji poziomej "widmo"
                 player->setPosition(player->getPosition().x + mp.getDeltaMovement().x, mBounds.top - pBounds.height - 0.1f);
+                onMovingPlatform = true; // Jesteśmy na ruchomej platformie
                 break;
             }
         }
     }
 
-    // 2. Jazda na windzie (pionowej)
     pBounds = player->getGlobalBounds();
     for (const auto& v : currentLevel.getElevators()) {
         sf::FloatRect vBounds = v.getBounds();
-
         if (pBounds.left + pBounds.width - 4.f > vBounds.left && pBounds.left + 4.f < vBounds.left + vBounds.width) {
             float oldElevatorTop = vBounds.top - v.getDeltaMovement().y;
             float playerFootY = pBounds.top + pBounds.height;
-
-            // Zwiększona tolerancja pionowa na wypadek spadku klatek (30.f)
             if (std::abs(playerFootY - oldElevatorTop) < 30.f && player->getVelocity().y >= 0.f) {
-                // -0.1f niweluje problem kolizji poziomej "widmo" na łączeniach wind!
                 player->setPosition(player->getPosition().x, vBounds.top - pBounds.height - 0.1f);
+                onMovingPlatform = true; // Jesteśmy na windzie
                 break;
             }
         }
     }
     // =====================================================================
 
-    // 1. Fizyka i ruch gracza
+    // Fizyka i ruch gracza
     player->update(dt, solidBlocks);
 
-    // --- LOGIKA AKTYWACJI ZANIKANIA ---
+    // --- NAPRAWA SKOKU NA WINDACH ---
+    if (onMovingPlatform) {
+        player->resetJumping(); // Wymuszamy możliwość skoku
+    }
+
+    // --- ZNIKAJĄCE PLATFORMY ---
     sf::FloatRect playerFeet = player->getGlobalBounds();
     playerFeet.height += 2.f;
 
@@ -278,7 +285,7 @@ StateAction PlayState::update(sf::Time dt)
         }
     }
 
-    // --- LOGIKA CHECKPOINTÓW ---
+    // --- CHECKPOINTY ---
     for (auto& c : currentLevel.getCheckpoints()) {
         if (!c.isActivated() && player->getGlobalBounds().intersects(c.getBounds())) {
             c.activate();
@@ -286,7 +293,7 @@ StateAction PlayState::update(sf::Time dt)
         }
     }
 
-    // --- LOGIKA KOLIZJI Z POCISKAMI WIEŻYCZEK ---
+    // --- WIEŻYCZKI ---
     for (auto& b : currentLevel.getBullets()) {
         if (b.isAlive() && player->getGlobalBounds().intersects(b.getBounds())) {
             b.destroy();
@@ -294,13 +301,13 @@ StateAction PlayState::update(sf::Time dt)
         }
     }
 
-    // --- OBSŁUGA KAMERY ---
+    // --- KAMERA ---
     sf::Vector2f playerPos = player->getPosition();
     float maxCameraY = 300.f;
     if (playerPos.y < maxCameraY) camera.setCenter(playerPos.x, playerPos.y);
     else camera.setCenter(playerPos.x, maxCameraY);
 
-    // --- STARA LOGIKA POTWORÓW ---
+    // --- POTWORY ---
     auto& levelEnemies = currentLevel.getEnemies();
     for (auto& enemy : levelEnemies) {
         if (!enemy.isAlive()) continue;
@@ -309,7 +316,7 @@ StateAction PlayState::update(sf::Time dt)
             if (player->getVelocity().y > 0 && player->getGlobalBounds().top + player->getGlobalBounds().height < enemy.getGlobalBounds().top + enemy.getGlobalBounds().height / 2.f) {
                 enemy.die();
                 stompSound.play();
-                player->bounce(); 
+                player->bounce();
                 player->incrementCombo();
                 int combo = player->getCombo();
                 if (combo == 1)      player->addScore(100);
@@ -324,23 +331,20 @@ StateAction PlayState::update(sf::Time dt)
     }
     levelEnemies.erase(std::remove_if(levelEnemies.begin(), levelEnemies.end(), [](const Enemy& e) { return !e.isAlive(); }), levelEnemies.end());
 
-    // --- LOGIKA BOSSA ---
+    // --- BOSS ---
     auto& levelBosses = currentLevel.getBosses();
     for (auto& boss : levelBosses) {
         if (!boss.isAlive()) continue;
-
         boss.updateBoss(dt, solidBlocks, player->getPosition());
 
         if (player->getGlobalBounds().intersects(boss.getGlobalBounds())) {
             if (player->getVelocity().y > 0 && player->getGlobalBounds().top + player->getGlobalBounds().height < boss.getGlobalBounds().top + 20.f) {
                 boss.takeDamage();
-                // opcjonalny dzwiek przy zabijaniu bosa
                 stompSound.play();
                 player->bounce();
                 player->addScore(300);
                 if (!boss.isAlive()) {
                     player->addScore(2000);
-                    // BARDZO WAŻNE: Boss po śmierci wyrzuca klucz!
                     currentLevel.getKeys().push_back(Key(boss.getGlobalBounds().left, boss.getGlobalBounds().top));
                 }
             }
@@ -361,11 +365,11 @@ StateAction PlayState::update(sf::Time dt)
     starText.setString("Gwiazdki: " + std::to_string(player->getStarsCount()));
 
     for (auto& mushroom : currentLevel.getMushrooms()) {
-        if (!mushroom.isCollected() && player->getGlobalBounds().intersects(mushroom.getBounds())) 
+        if (!mushroom.isCollected() && player->getGlobalBounds().intersects(mushroom.getBounds()))
         {
-            mushroom.collect(); 
+            mushroom.collect();
             powerupSound.play();
-            player->setSuper(true); 
+            player->setSuper(true);
             player->setHp(player->getHp() + 1);
             if (player->getHp() > 3) player->setHp(3);
         }

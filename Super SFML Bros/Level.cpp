@@ -6,15 +6,15 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
     stars.clear();
     traps.clear();
     portals.clear();
-    enemies.clear(); 
+    enemies.clear();
     mushrooms.clear();
     checkpoints.clear();
     vanishingPlatforms.clear();
     movingPlatforms.clear();
     turrets.clear();
     bullets.clear();
-    iceBlocks.clear(); 
-    elevators.clear(); 
+    iceBlocks.clear();
+    elevators.clear();
     bosses.clear();
 
     playerSpawnPosition = sf::Vector2f(100.f, 100.f);
@@ -38,27 +38,29 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
             {
                 sf::RectangleShape block;
                 block.setSize(sf::Vector2f(tile_size, tile_size));
-                //block.setFillColor(sf::Color::Green);
-                block.setFillColor(sf::Color::White); // Reset koloru na biały, żeby tekstura nie była zielona
-                block.setTexture(&groundTex);         // Przekazujemy adres naszej wygenerowanej tekstury
-                block.setTextureRect(sf::IntRect(0, 0, static_cast<int>(tile_size), static_cast<int>(tile_size)));
+
+                // --- NAPRAWA TEKSTURY PODŁOGI ---
+                block.setFillColor(sf::Color::White); // Musi być biały, żeby tekstura nie złapała dziwnego odcienia
+                block.setTexture(&groundTex);         // Wskazujemy na wczytaną teksturę ziemi
+
+                // USUNIĘTO setTextureRect! Teraz SFML idealnie rozciągnie/ściśnie Twoją grafikę do klocka 50x50.
 
                 block.setPosition(x * tile_size, y * tile_size);
                 platforms.push_back(block);
             }
             else if (tile == 'P') playerSpawnPosition = sf::Vector2f(x * tile_size, y * tile_size);
-            else if (tile == 'S') stars.push_back(Star(x * tile_size, y * tile_size));         
+            else if (tile == 'S') stars.push_back(Star(x * tile_size, y * tile_size));
             else if (tile == '^') traps.push_back(Trap(x * tile_size, y * tile_size));
-            else if (tile == 'F') portals.push_back(Portal(x * tile_size, y * tile_size, true));  // Zablokowany portal
-            else if (tile == 'T') trampolines.push_back(Trampoline(x * tile_size, y * tile_size)); // Trampolina  
-            else if (tile == 'K') keys.push_back(Key(x * tile_size, y * tile_size)); // Klucz
+            else if (tile == 'F') portals.push_back(Portal(x * tile_size, y * tile_size, true));
+            else if (tile == 'T') trampolines.push_back(Trampoline(x * tile_size, y * tile_size));
+            else if (tile == 'K') keys.push_back(Key(x * tile_size, y * tile_size));
             else if (tile == 'E') enemies.push_back(Enemy(x * tile_size, y * tile_size));
             else if (tile == 'M') mushrooms.push_back(Mushroom(x * tile_size, y * tile_size, mushroomTex));
             else if (tile == 'C') checkpoints.push_back(Checkpoint(x * tile_size, y * tile_size));
             else if (tile == 'Z') vanishingPlatforms.push_back(VanishingPlatform(x * tile_size, y * tile_size));
             else if (tile == 'R') movingPlatforms.push_back(MovingPlatform(x * tile_size, y * tile_size));
             else if (tile == 'W') turrets.push_back(Turret(x * tile_size, y * tile_size));
-            else if (tile == 'I') 
+            else if (tile == 'I')
             {
                 sf::RectangleShape ice;
                 ice.setSize(sf::Vector2f(tile_size, tile_size));
@@ -75,15 +77,8 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
     return true;
 }
 
-const std::vector<sf::RectangleShape>& Level::getPlatforms() const
-{
-    return platforms;
-}
-
-sf::Vector2f Level::getPlayerSpawn() const
-{
-    return playerSpawnPosition;
-}
+const std::vector<sf::RectangleShape>& Level::getPlatforms() const { return platforms; }
+sf::Vector2f Level::getPlayerSpawn() const { return playerSpawnPosition; }
 
 void Level::render(sf::RenderWindow& window)
 {
@@ -103,33 +98,17 @@ void Level::render(sf::RenderWindow& window)
     for (auto& b : bosses) b.render(window);
 }
 
-std::vector<Star>& Level::getStars() 
-{ 
-    return stars; 
-}
+std::vector<Star>& Level::getStars() { return stars; }
+const std::vector<Trap>& Level::getTraps() const { return traps; }
 
-const std::vector<Trap>& Level::getTraps() const 
-{ 
-    return traps; 
-}
-
-void Level::removeCollectedStars()
-{
+void Level::removeCollectedStars() {
     stars.erase(std::remove_if(stars.begin(), stars.end(), [](const Star& s) { return s.isCollected(); }), stars.end());
 }
 
-std::vector<Portal>& Level::getPortals()
-{ 
-    return portals; 
+std::vector<Portal>& Level::getPortals() { return portals; }
+std::vector<Enemy>& Level::getEnemies() { return enemies; }
 
-}
-std::vector<Enemy>& Level::getEnemies() 
-{ 
-    return enemies; 
-}
-
-void Level::removeCollectedKeys()
-{
+void Level::removeCollectedKeys() {
     keys.erase(std::remove_if(keys.begin(), keys.end(), [](const Key& k) { return k.isCollected(); }), keys.end());
 }
 
@@ -138,14 +117,12 @@ void Level::updateLevelElements(sf::Time dt) {
     for (auto& mp : movingPlatforms) mp.update(dt);
     for (auto& v : elevators) v.update(dt);
 
-    // Wieżyczki strzelają
     for (auto& t : turrets) {
         if (t.updateAndCheckShoot(dt)) {
             spawnBullet(t.getBounds().left, t.getBounds().top);
         }
     }
 
-    // Pociski lecą
     for (auto& b : bullets) b.update(dt);
     bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [](const Bullet& b) { return !b.isAlive(); }), bullets.end());
 }
