@@ -82,16 +82,22 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
         keyTexture.loadFromImage(keyImage);
     }
 
-    // --- TEKSTURA FLAGI CHECKPOINTU ---
     sf::Image flagImage;
     if (flagImage.loadFromFile("pliki/flag_red.png")) {
-        // Trik: Pobieramy kolor idealnie z lewego górnego rogu i ustawiamy go jako przezroczysty!
         flagImage.createMaskFromColor(flagImage.getPixel(0, 0));
         flagTexture.loadFromImage(flagImage);
         flagTexture.setSmooth(false);
     }
+
+    // --- TEKSTURA LODU ---
+    sf::Image iceImage;
+    if (iceImage.loadFromFile("pliki/iceblock.png")) {
+        // Usuwamy ewentualne idealnie białe tło (częsta sprawa po konwersji z SVG)
+        iceImage.createMaskFromColor(sf::Color::White);
+        iceTexture.loadFromImage(iceImage);
+    }
     else {
-        std::cout << "Blad ladowania pliku pliki/flag_red.png!" << std::endl;
+        std::cout << "Blad ladowania pliku pliki/iceblock.png!" << std::endl;
     }
     // =======================================================
 
@@ -124,7 +130,8 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
             platformTexture.setRepeated(true);
         }
 
-        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture);
+        // Dodano iceTexture na końcu
+        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture);
         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
     }
 
@@ -193,7 +200,8 @@ bool PlayState::loadGame() {
             platformTexture.setRepeated(true);
         }
 
-        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture);
+        // Dodano iceTexture
+        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture);
 
         if (hasCheck) {
             for (auto& c : currentLevel.getCheckpoints()) {
@@ -431,7 +439,8 @@ StateAction PlayState::update(sf::Time dt) {
                         platformTexture.setRepeated(true);
                     }
 
-                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture)) {
+                    // Dodano iceTexture
+                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture)) {
                         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
                         player->resetCheckpoint();
                         backgroundTexture.loadFromFile("pliki/tlo" + std::to_string(currentLevelNumber) + ".png");
@@ -448,7 +457,8 @@ StateAction PlayState::update(sf::Time dt) {
             player->setHp(3);
             player->resetVelocity();
 
-            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture);
+            // Dodano iceTexture
+            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture);
             player->setPosition(player->getCheckpointPos().x, player->getCheckpointPos().y);
 
             for (auto& c : currentLevel.getCheckpoints()) {

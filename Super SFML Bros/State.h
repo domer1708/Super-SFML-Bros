@@ -78,6 +78,7 @@ private:
     sf::Texture trapTexture;
     sf::Texture keyTexture;
     sf::Texture flagTexture;
+    sf::Texture iceTexture;
 
     sf::Sprite backgroundSprite;
 

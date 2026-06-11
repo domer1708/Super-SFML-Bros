@@ -1,6 +1,6 @@
 #include "Level.h"
 
-bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex, const sf::Texture& flagTex)
+bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex, const sf::Texture& flagTex, const sf::Texture& iceTex)
 {
     platforms.clear();
     stars.clear();
@@ -62,7 +62,11 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
             {
                 sf::RectangleShape ice;
                 ice.setSize(sf::Vector2f(tile_size, tile_size));
-                ice.setFillColor(sf::Color(150, 255, 255)); // Lód
+
+                // NAKŁADAMY TEKSTURĘ LODU
+                ice.setTexture(&iceTex);
+                ice.setFillColor(sf::Color::White); // Musi być biały, żeby tekstura miała oryginalne kolory!
+
                 ice.setPosition(x * tile_size, y * tile_size);
                 iceBlocks.push_back(ice);
             }
