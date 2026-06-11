@@ -175,8 +175,21 @@ bool PlayState::loadGame() {
         else if (charIdx == 1) player->setColor(sf::Color::Green);
         else if (charIdx == 2) player->setColor(sf::Color::Blue);
 
+        // Ładujemy mapę od nowa
         currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture);
 
+        // --- POPRAWKA: WIZUALNA REAKTYWACJA CHECKPOINTU PO WCZYTANIU ---
+        if (hasCheck) {
+            for (auto& c : currentLevel.getCheckpoints()) {
+                // Jeśli pozycja checkpointu na mapie zgadza się z wczytaną pozycją cx
+                if (std::abs(c.getBounds().left - cx) < 10.f) {
+                    c.activate(); // Zaświeć flagę na niebiesko!
+                }
+            }
+        }
+        // ---------------------------------------------------------------
+
+        // Stan Bossa
         if (!currentLevel.getBosses().empty()) {
             if (bossHp <= 0) currentLevel.getBosses().clear();
             else currentLevel.getBosses()[0].setHp(bossHp);
