@@ -22,19 +22,41 @@ Player::Player()
     shape.setFillColor(sf::Color::Transparent);
     shape.setSize(sf::Vector2f(50.f, 50.f));
 
-    // --- ŁADOWANIE OSOBNYCH KLATEK ANIMACJI ---
+    // --- ŁADOWANIE OSOBNYCH KLATEK ANIMACJI (DYNAMICZNE TŁO) ---
     sf::Image imgStand, imgW1, imgW2, imgW3, imgJump;
-    
-    // Funkcja pomocnicza lambda (skraca kod i dba o to samo dla każdego pliku)
+
+    // Ulepszona funkcja lambda: sama wykrywa kolor tła!
     auto loadTexture = [](sf::Image& img, sf::Texture& tex, const std::string& path) {
         if (img.loadFromFile(path)) {
-            img.createMaskFromColor(sf::Color::White); // Usunięcie białego tła
+
+            // Pobieramy kolor tła z lewego górnego rogu obrazka (piksel 0,0)
+            sf::Color bgColor = img.getPixel(0, 0);
+
+            sf::Vector2u size = img.getSize();
+            for (unsigned int y = 0; y < size.y; ++y) {
+                for (unsigned int x = 0; x < size.x; ++x) {
+                    sf::Color pixelColor = img.getPixel(x, y);
+
+                    // Tolerancja (30) radzi sobie z niedoskonałościami po kompresji
+                    const int tolerance = 30;
+
+                    // Jeśli kolor piksela jest bardzo zbliżony do koloru tła (np. zielonego)
+                    if (std::abs(pixelColor.r - bgColor.r) < tolerance &&
+                        std::abs(pixelColor.g - bgColor.g) < tolerance &&
+                        std::abs(pixelColor.b - bgColor.b) < tolerance) {
+
+                        img.setPixel(x, y, sf::Color(0, 0, 0, 0)); // Zrób przezroczysty
+                    }
+                }
+            }
+
             tex.loadFromImage(img);
-            tex.setSmooth(false); // Wyłączamy rozmywanie pikseli (niezwykle ważne w pixel-arcie!)
-        } else {
+            tex.setSmooth(false); // Wyłączamy rozmywanie pikseli dla ostrego pixel-artu
+        }
+        else {
             std::cout << "Blad: Nie udalo sie zaladowac " << path << std::endl;
         }
-    };
+        };
 
     loadTexture(imgStand, texStand, "pliki/mario_stand.png");
     loadTexture(imgW1, texWalk1, "pliki/mario_walk1.png");
@@ -81,14 +103,14 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
     {
         invincibilityTimer -= dt;
         if (static_cast<int>(invincibilityTimer.asMilliseconds() / 100) % 2 == 0)
-            sprite.setColor(sf::Color(255, 255, 255, 100));
+            sprite.setColor(sf::Color(255, 255, 255, 100)); // Półprzezroczysty
         else
             sprite.setColor(baseColor);
     }
     else
     {
-        if(hasSuperPower) sprite.setColor(sf::Color(255, 215, 0));
-        else sprite.setColor(baseColor);
+        if (hasSuperPower) sprite.setColor(sf::Color(255, 215, 0)); // Złoty przy mocy
+        else sprite.setColor(baseColor); // Zwykły kolor (ustawiony na biały = oryginalny obrazek)
     }
 
     float gravity = 1000.f;
@@ -157,8 +179,7 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
     // =========================================================================
     if (isJumping || std::abs(velocity.y) > 50.f)
     {
-        // true na końcu resetuje TextureRect, żeby dopasować się do rozmiaru nowego pliku
-        sprite.setTexture(texJump, true); 
+        sprite.setTexture(texJump, true);
     }
     else if (std::abs(velocity.x) > 10.f)
     {
@@ -176,13 +197,11 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
     }
 
     // --- SKALOWANIE I OBRACANIE ---
-    // Pobieramy rozmiar aktualnie ustawionej tekstury z pliku
     sf::Vector2u currentTexSize = sprite.getTexture()->getSize();
-    
-    // Zabezpieczenie przed błędem, gdyby tekstura nie wczytała się poprawnie (dzielenie przez zero)
-    if (currentTexSize.y > 0) 
+
+    if (currentTexSize.y > 0)
     {
-        float scaleFactor = 60.f / static_cast<float>(currentTexSize.y); // Mario ma 60px wysokości
+        float scaleFactor = 60.f / static_cast<float>(currentTexSize.y);
 
         if (!isFacingRight)
         {
@@ -199,8 +218,6 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
 
 void Player::render(sf::RenderWindow& window)
 {
-    // Rysowanie z zaokrąglaniem współrzędnych zapobiega błędom sub-pixel renderowania
-    // (migotaniu i powstawaniu dziwnych pasów na krawędziach)
     float drawX = std::round(shape.getPosition().x - 8.f);
     float drawY = std::round(shape.getPosition().y - 10.f);
 
@@ -212,8 +229,11 @@ sf::Vector2f Player::getPosition() const { return position; }
 
 void Player::setColor(sf::Color color)
 {
-    baseColor = color; // NAPRAWIONE: Zapisuje w pamięci wybrany kolor (np. zielony dla Luigiego)
-    if(!hasSuperPower) sprite.setColor(baseColor);
+    // ZMIANA: Ignorujemy czerwony/zielony filtr przesyłany z PlayState.
+    // Wymuszamy kolor Biały, aby SFML wyświetlał naturalne kolory grafiki (czerwoną czapkę, brązowe buty itp.)
+    baseColor = sf::Color::White;
+
+    if (!hasSuperPower) sprite.setColor(baseColor);
 }
 
 void Player::takeDamage(int damage)
@@ -240,7 +260,7 @@ void Player::setSuper(bool status)
 {
     hasSuperPower = status;
     if (status) sprite.setColor(sf::Color(255, 215, 0));
-    else sprite.setColor(baseColor); // Gdy traci moc, wraca do oryginalnego koloru (np. Zielonego)
+    else sprite.setColor(baseColor);
 }
 
 void Player::superBounce()
