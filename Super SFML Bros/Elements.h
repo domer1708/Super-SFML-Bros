@@ -40,7 +40,9 @@ private:
     sf::RectangleShape shape;
     bool locked; // Czy portal wymaga klucza?
 public:
-    Portal(float x, float y, bool isLocked = false);
+    // Dodajemy argument const sf::Texture& tex
+    Portal(float x, float y, const sf::Texture& tex, bool isLocked = false);
+
     void render(sf::RenderWindow& window);
     sf::FloatRect getBounds() const;
     void unlock();

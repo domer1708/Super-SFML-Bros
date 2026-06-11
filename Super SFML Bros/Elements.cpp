@@ -80,23 +80,40 @@ int Trap::getDamage() const
     return damage;
 }
 
-Portal::Portal(float x, float y, bool isLocked) {
-    shape.setSize(sf::Vector2f(50.f, 100.f));
-    if (isLocked) shape.setFillColor(sf::Color(50, 50, 50)); // Szary (zablokowany)
-    else shape.setFillColor(sf::Color::Cyan); // Błękitny (otwarty)
-    shape.setPosition(x, y - 50.f);
+Portal::Portal(float x, float y, const sf::Texture& tex, bool isLocked) {
+    // 1. ZWIĘKSZAMY ROZMIAR DRZWI (Teraz są 2x szersze!)
+    shape.setSize(sf::Vector2f(100.f, 100.f));
+
+    // 2. KORYGUJEMY POZYCJĘ
+    // x - 25.f przesuwa drzwi lekko w lewo, żeby były idealnie wyśrodkowane
+    // y - 50.f unosi je w górę, żeby dół drzwi stał równo na podłodze
+    shape.setPosition(x - 25.f, y - 50.f);
+
     locked = isLocked;
+
+    // Nakładamy Twoją nową teksturę (bez żadnego wycinania setTextureRect!)
+    shape.setTexture(&tex);
+
+    if (isLocked) {
+        // Jeśli drzwi są zamknięte na klucz, lekko je przyciemniamy
+        shape.setFillColor(sf::Color(150, 150, 150));
+    }
+    else {
+        // Otwarte drzwi mają swoje naturalne kolory
+        shape.setFillColor(sf::Color::White);
+    }
 }
 
 void Portal::render(sf::RenderWindow& window) { window.draw(shape); }
 
 sf::FloatRect Portal::getBounds() const { return shape.getGlobalBounds(); }
 
-void Portal::unlock() 
+void Portal::unlock()
 {
     locked = false;
-    shape.setFillColor(sf::Color::Cyan); // Zmienia kolor po otwarciu!
+    shape.setFillColor(sf::Color::White); // Zmienia kolor na czysty po otwarciu!
 }
+
 bool Portal::isLocked() const { return locked; }
 
 Mushroom::Mushroom(float x, float y, const sf::Texture& tex)

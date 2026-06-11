@@ -47,17 +47,18 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     timerText.setCharacterSize(16);
     timerText.setFillColor(sf::Color(255, 215, 0));
     timerText.setString("Czas: 0s");
-    totalTime=0.f;
-    //licznik smierci
+    totalTime = 0.f;
+
+    // Licznik smierci
     deathCount = 0;
     deathText.setFont(font);
     deathText.setCharacterSize(16);
-    deathText.setFillColor(sf::Color::Red); //
+    deathText.setFillColor(sf::Color::Red);
     deathText.setString("ZGONY: 0");
     deathText.setPosition(20.f, 550.f);
 
     // =======================================================
-    // --- NAPRAWA BIAŁEGO TŁA W TEKSTURACH ---
+    // --- ŁADOWANIE TEKSTUR I USUWANIE TŁA ---
     // =======================================================
     sf::Image mushroomImage;
     if (mushroomImage.loadFromFile("pliki/masrums.png"))
@@ -65,11 +66,8 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
         mushroomImage.createMaskFromColor(sf::Color::White);
         mushroomTexture.loadFromImage(mushroomImage);
     }
-    else
-    {
-        std::cout << "Blad ladowania pliku pliki/masrums.png!" << std::endl;
-    }
-    
+    else std::cout << "Blad ladowania pliku pliki/masrums.png!" << std::endl;
+
     sf::Image groundImage;
     if (groundImage.loadFromFile("pliki/ground.png"))
     {
@@ -77,10 +75,17 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
         groundTexture.loadFromImage(groundImage);
         groundTexture.setRepeated(true);
     }
-    else
+    else std::cout << "Blad ladowania pliku pliki/ground.png!" << std::endl;
+
+    // --- TEKSTURA DRZWI (USUWANIE CZARNEGO TŁA) ---
+    sf::Image doorImage;
+    if (doorImage.loadFromFile("pliki/door.png"))
     {
-        std::cout << "Blad ladowania pliku pliki/ground.png!" << std::endl;
+        // Wymazujemy idealnie czarny kolor!
+        doorImage.createMaskFromColor(sf::Color::Black);
+        doorTexture.loadFromImage(doorImage);
     }
+    else std::cout << "Blad ladowania pliku pliki/door.png!" << std::endl;
     // =======================================================
 
     // Dźwięki
@@ -107,7 +112,7 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
         else if (characterIndex == 1) player->setColor(sf::Color::Green);
         else if (characterIndex == 2) player->setColor(sf::Color::Blue);
 
-        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, groundTexture);
+        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, groundTexture, doorTexture);
         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
     }
 
@@ -142,7 +147,7 @@ void PlayState::saveGame() {
             << player->getCheckpointPos().x << "\n" << player->getCheckpointPos().y << "\n"
             << player->getPosition().x << "\n" << player->getPosition().y << "\n"
             << bossHp << "\n"
-            << totalTime << "\n" << deathCount <<"\n";
+            << totalTime << "\n" << deathCount << "\n";
 
         file.close();
         if (pauseMenu) pauseMenu->setItemText(1, "ZAPISANO!");
@@ -156,13 +161,13 @@ bool PlayState::loadGame() {
         bool hasKey, hasCheck;
         float cx, cy, px, py;
 
-        file >> lvl >> charIdx >> hp >> score >> stars >> hasKey >> hasCheck 
-        >> cx >> cy >> px >> py >> bossHp >> totalTime >> deathCount;
+        file >> lvl >> charIdx >> hp >> score >> stars >> hasKey >> hasCheck
+            >> cx >> cy >> px >> py >> bossHp >> totalTime >> deathCount;
         file.close();
         deathText.setString("ZGONY: " + std::to_string(deathCount));
         currentLevelNumber = lvl; currentCharacterIndex = charIdx;
         player->setHp(hp); player->setScore(score); player->setStarsCount(stars); player->setKey(hasKey);
-        
+
         if (hasCheck) player->setCheckpoint(sf::Vector2f(cx, cy));
         else player->resetCheckpoint();
 
@@ -170,7 +175,7 @@ bool PlayState::loadGame() {
         else if (charIdx == 1) player->setColor(sf::Color::Green);
         else if (charIdx == 2) player->setColor(sf::Color::Blue);
 
-        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture);
+        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture, doorTexture);
 
         if (hasCheck) {
             for (auto& c : currentLevel.getCheckpoints()) {
@@ -226,15 +231,14 @@ StateAction PlayState::handleEvent(sf::Event& event)
 StateAction PlayState::update(sf::Time dt)
 {
     if (isGameOver || isGameWon || isPaused) return StateAction::Keep;
+
     // --- ZABEZPIECZENIE PRZED LAGIEM (TUNELOWANIEM) NA STARCIE ---
-    // Jeśli komputer zamrozi się na ładowaniu (np. dt > 0.05 sekundy),
-    // ucinamy czas, aby gracz nie spadł pod podłogę z wielką prędkością.
-    if (dt.asSeconds() > 0.05f) 
+    if (dt.asSeconds() > 0.05f)
     {
         dt = sf::seconds(0.05f);
     }
     totalTime += dt.asSeconds(); // Dodajemy czas, który upłynął w tej klatce
-    
+
     int seconds = static_cast<int>(totalTime);
     timerText.setString("CZAS: " + std::to_string(seconds) + "S");
     timerText.setPosition(800.f - timerText.getGlobalBounds().width - 20.f, 550.f);
@@ -257,9 +261,9 @@ StateAction PlayState::update(sf::Time dt)
     sf::FloatRect iceFeet = player->getGlobalBounds();
     iceFeet.top += 2.f;
     bool onIce = false;
-    for (const auto& ice : currentLevel.getIceBlocks()) 
+    for (const auto& ice : currentLevel.getIceBlocks())
     {
-        if (iceFeet.intersects(ice.getGlobalBounds())) 
+        if (iceFeet.intersects(ice.getGlobalBounds()))
         {
             onIce = true;
             break;
@@ -435,7 +439,8 @@ StateAction PlayState::update(sf::Time dt)
                 else {
                     std::string nextMap = "pliki/level" + std::to_string(currentLevelNumber) + ".txt";
 
-                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, groundTexture)) {
+                    // Załaduj z teksturą drzwi
+                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, groundTexture, doorTexture)) {
                         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
                         player->resetCheckpoint();
                         backgroundTexture.loadFromFile("pliki/tlo" + std::to_string(currentLevelNumber) + ".png");
@@ -455,11 +460,12 @@ StateAction PlayState::update(sf::Time dt)
             player->setHp(3);
             player->resetVelocity();
 
-            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture);
+            // Odrodzenie z teksturą drzwi
+            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, groundTexture, doorTexture);
             player->setPosition(player->getCheckpointPos().x, player->getCheckpointPos().y);
 
             for (auto& c : currentLevel.getCheckpoints()) {
-                if (std::abs(c.getBounds().left - player->getCheckpointPos().x) < 10.f) 
+                if (std::abs(c.getBounds().left - player->getCheckpointPos().x) < 10.f)
                 {
                     c.activate();
                 }

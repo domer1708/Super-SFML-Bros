@@ -1,6 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include <SFML/Audio.hpp> // <--- DODANA BIBLIOTEKA AUDIO!
+#include <SFML/Audio.hpp> 
 #include <memory>
 #include <vector>
 #include "Entity.h"
@@ -68,12 +68,16 @@ private:
     int currentCharacterIndex; // Zapamiętujemy kim gramy
     bool isGameWon;
     sf::Text gameWonText;
+
+    // TEKSTURY
     sf::Texture mushroomTexture;
     sf::Texture backgroundTexture;
-    //textura podłogi
     sf::Texture groundTexture;
+    sf::Texture doorTexture; // <--- DODANA TEKSTURA DRZWI
+
     sf::Sprite backgroundSprite;
-    //dzwiek zabijania potworów
+
+    // DŹWIĘKI
     sf::SoundBuffer stompBuffer;
     sf::Sound stompSound;
     sf::SoundBuffer powerupBuffer;
@@ -86,14 +90,16 @@ private:
     sf::ConvexShape heartShape;
     sf::Text starText;
     sf::Text scoreText;
+
     // Logika pauzy
     std::unique_ptr<PauseMenu> pauseMenu;
-    //zegar
-    sf::Text timerText;     // Obiekt do wyświetlania tekstu czasu
+
+    // Zegar i zgony
+    sf::Text timerText;
     sf::Clock gameClock;
-    float totalTime;    // Zegar, który mierzy czas od uruchomienia stanu
+    float totalTime;
     bool isPaused;
-    sf::Text deathText;     // licznik zgonu
+    sf::Text deathText;
     int deathCount;
     sf::Text keyText;
 
