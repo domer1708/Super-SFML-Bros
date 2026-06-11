@@ -70,15 +70,24 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
         doorTexture.loadFromImage(doorImage);
     }
 
-    // --- TEKSTURA PUŁAPKI (USUWANIE ZIELONEGO TŁA) ---
     sf::Image trapImage;
     if (trapImage.loadFromFile("pliki/spike.png")) {
-        // Większość spritesheetów używa czystego zielonego (0, 255, 0) jako tła maskującego
-        trapImage.createMaskFromColor(sf::Color(0, 255, 0));
+        trapImage.createMaskFromColor(sf::Color(0, 255, 0)); // Zielona maska dla kolców
         trapTexture.loadFromImage(trapImage);
     }
     else {
         std::cout << "Blad ladowania pliku pliki/spike.png!" << std::endl;
+    }
+
+    // --- TEKSTURA NOWEGO KLUCZA (Z CZARNYM TŁEM) ---
+    sf::Image keyImage;
+    if (keyImage.loadFromFile("pliki/key.png")) {
+        // Zmienione na sf::Color::Black, żeby wyciąć czarną skrzynkę wokół retro klucza
+        keyImage.createMaskFromColor(sf::Color::Black);
+        keyTexture.loadFromImage(keyImage);
+    }
+    else {
+        std::cout << "Blad ladowania pliku pliki/key.png!" << std::endl;
     }
     // =======================================================
 
@@ -100,8 +109,8 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
         else if (characterIndex == 1) player->setColor(sf::Color::Green);
         else if (characterIndex == 2) player->setColor(sf::Color::Blue);
 
-        // --- Nowa logika wyboru tekstury klocków z zachowaniem maskowania ---
-        std::string platName = "pliki/ground.png"; // Domyślnie dla poziomu 1
+        // Wybór tekstury klocków dla poziomu 1
+        std::string platName = "pliki/ground.png";
         if (currentLevelNumber == 2) platName = "pliki/bloki2.png";
         else if (currentLevelNumber == 3) platName = "pliki/blok3.png";
 
@@ -112,7 +121,7 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
             platformTexture.setRepeated(true);
         }
 
-        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, platformTexture, doorTexture, trapTexture);
+        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture);
         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
     }
 
@@ -169,12 +178,11 @@ bool PlayState::loadGame() {
         if (charIdx == 0) player->setColor(sf::Color::Red);
         else if (charIdx == 1) player->setColor(sf::Color::Green);
         else if (charIdx == 2) player->setColor(sf::Color::Blue);
-        
-        // --- Wybór tekstury klocków po wczytaniu zapisu z maskowaniem ---
+
         std::string platName = "pliki/ground.png";
         if (currentLevelNumber == 2) platName = "pliki/bloki2.png";
         else if (currentLevelNumber == 3) platName = "pliki/blok3.png";
-        
+
         sf::Image platImage;
         if (platImage.loadFromFile(platName)) {
             platImage.createMaskFromColor(sf::Color::White);
@@ -182,8 +190,7 @@ bool PlayState::loadGame() {
             platformTexture.setRepeated(true);
         }
 
-        // Jedno poprawne wywołanie ładowania poziomu
-        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture);
+        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture);
 
         if (hasCheck) {
             for (auto& c : currentLevel.getCheckpoints()) {
@@ -357,7 +364,8 @@ StateAction PlayState::update(sf::Time dt) {
                 player->addScore(300);
                 if (!boss.isAlive()) {
                     player->addScore(2000);
-                    currentLevel.getKeys().push_back(Key(boss.getGlobalBounds().left, boss.getGlobalBounds().top));
+                    // NAPRAWIONY BŁĄD TUTAJ: przekazujemy poprawnie keyTexture
+                    currentLevel.getKeys().push_back(Key(boss.getGlobalBounds().left, boss.getGlobalBounds().top, keyTexture));
                 }
             }
             else player->takeDamage(1);
@@ -410,7 +418,6 @@ StateAction PlayState::update(sf::Time dt) {
                 else {
                     std::string nextMap = "pliki/level" + std::to_string(currentLevelNumber) + ".txt";
 
-                    // --- Zmiana tekstury klocków przy przejściu przez portal z maskowaniem ---
                     std::string platName = "pliki/ground.png";
                     if (currentLevelNumber == 2) platName = "pliki/bloki2.png";
                     else if (currentLevelNumber == 3) platName = "pliki/blok3.png";
@@ -422,7 +429,7 @@ StateAction PlayState::update(sf::Time dt) {
                         platformTexture.setRepeated(true);
                     }
 
-                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, platformTexture, doorTexture, trapTexture)) {
+                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture)) {
                         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
                         player->resetCheckpoint();
                         backgroundTexture.loadFromFile("pliki/tlo" + std::to_string(currentLevelNumber) + ".png");
@@ -439,8 +446,7 @@ StateAction PlayState::update(sf::Time dt) {
             player->setHp(3);
             player->resetVelocity();
 
-            // Ładowanie poprawnej tekstury klocków przy odrodzeniu
-            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture);
+            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture);
             player->setPosition(player->getCheckpointPos().x, player->getCheckpointPos().y);
 
             for (auto& c : currentLevel.getCheckpoints()) {

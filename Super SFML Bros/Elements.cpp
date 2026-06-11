@@ -171,14 +171,29 @@ void Trampoline::render(sf::RenderWindow& window) { window.draw(shape); }
 sf::FloatRect Trampoline::getBounds() const { return shape.getGlobalBounds(); }
 
 // --- KLUCZ ---
-Key::Key(float x, float y) {
-    shape.setSize(sf::Vector2f(20.f, 10.f));
-    shape.setFillColor(sf::Color(255, 215, 0)); // Złoty
-    shape.setPosition(x + 15.f, y + 20.f);
+Key::Key(float x, float y, const sf::Texture& tex) {
+    sprite.setTexture(tex);
+
+    // POWIĘKSZANIE: Skalujemy klucz do wymiarów np. 48x48 pikseli
+    // (prawie cały kafel 50x50, żeby był widoczny)
+    float targetSize = 48.f;
+    float scaleX = targetSize / tex.getSize().x;
+    float scaleY = targetSize / tex.getSize().y;
+    sprite.setScale(scaleX, scaleY);
+
+    // KORYGUJEMY POZYCJĘ (mniejsze przesunięcie, żeby wyśrodkować duży klucz)
+    sprite.setPosition(x + 1.f, y + 1.f);
+
+    // POWIĘKSZANIE HITBOXA: Zmieniamy na 48x48, żeby pasował do grafiki
+    hitbox.setSize(sf::Vector2f(targetSize, targetSize));
+    hitbox.setPosition(x + 1.f, y + 1.f);
+    hitbox.setFillColor(sf::Color::Transparent); // Hitbox niewidzialny
+
     collected = false;
 }
-void Key::render(sf::RenderWindow& window) { if (!collected) window.draw(shape); }
-sf::FloatRect Key::getBounds() const { return shape.getGlobalBounds(); }
+
+void Key::render(sf::RenderWindow& window) { if (!collected) window.draw(sprite); }
+sf::FloatRect Key::getBounds() const { return hitbox.getGlobalBounds(); }
 void Key::collect() { collected = true; }
 bool Key::isCollected() const { return collected; }
 

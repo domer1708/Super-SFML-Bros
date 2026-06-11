@@ -76,10 +76,11 @@ public:
 // --- KLASA KLUCZA ---
 class Key {
 private:
-    sf::RectangleShape shape;
+    sf::Sprite sprite;
+    sf::RectangleShape hitbox;
     bool collected;
 public:
-    Key(float x, float y);
+    Key(float x, float y, const sf::Texture& tex); // Zmieniony konstruktor
     void render(sf::RenderWindow& window);
     sf::FloatRect getBounds() const;
     void collect();
