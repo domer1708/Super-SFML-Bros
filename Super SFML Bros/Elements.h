@@ -138,12 +138,14 @@ public:
 // --- STRZELAJĄCA WIEŻYCZKA ---
 class Turret {
 private:
-    sf::RectangleShape shape;
+    sf::Sprite sprite; // ZMIANA: Zamiast RectangleShape
     float shootTimer;
     float shootInterval;
+
 public:
-    Turret(float x, float y);
-    bool updateAndCheckShoot(sf::Time dt); // Zwraca true, gdy nadszedł czas na strzał
+    // ZMIANA: Dodano teksturę do konstruktora
+    Turret(float x, float y, const sf::Texture& tex);
+    bool updateAndCheckShoot(sf::Time dt);
     void render(sf::RenderWindow& window);
     sf::FloatRect getBounds() const;
 };

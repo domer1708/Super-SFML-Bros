@@ -82,6 +82,7 @@ private:
     sf::Texture enemyTextureA;
     sf::Texture enemyTextureB;
     sf::Texture bossTexture;
+    sf::Texture turretTexture;
 
     sf::Sprite backgroundSprite;
 

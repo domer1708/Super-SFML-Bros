@@ -35,7 +35,7 @@ public:
 
     // --- UJEDNOLICONA DEKLARACJA ---
     // Znajdź tę linijkę i dodaj na końcu: const sf::Texture& bossTex
-    bool loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex, const sf::Texture& flagTex, const sf::Texture& iceTex, const sf::Texture& enemyTexA, const sf::Texture& enemyTexB, const sf::Texture& bossTex);
+    bool loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex, const sf::Texture& flagTex, const sf::Texture& iceTex, const sf::Texture& enemyTexA, const sf::Texture& enemyTexB, const sf::Texture& bossTex, const sf::Texture& turretTex);
 
     const std::vector<sf::RectangleShape>& getPlatforms() const;
     sf::Vector2f getPlayerSpawn() const;

@@ -297,13 +297,27 @@ void Bullet::render(sf::RenderWindow& window) { window.draw(shape); }
 sf::FloatRect Bullet::getBounds() const { return shape.getGlobalBounds(); }
 
 // --- WIEŻYCZKA ---
-Turret::Turret(float x, float y) {
-    shape.setSize(sf::Vector2f(50.f, 50.f));
-    shape.setFillColor(sf::Color(70, 70, 70)); // Ciemnoszary metal
-    shape.setPosition(x, y);
+Turret::Turret(float x, float y, const sf::Texture& tex) {
+    sprite.setTexture(tex);
+
+    // SKALOWANIE: Oryginał to 360x172. 
+    // Robimy szerokość na 80px (nieco szersza niż kafel 50x50, wygląda groźniej)
+    float targetWidth = 80.f;
+    float texW = static_cast<float>(tex.getSize().x);
+    float texH = static_cast<float>(tex.getSize().y);
+    float scale = targetWidth / texW;
+
+    sprite.setScale(scale, scale);
+
+    // POZYCJONOWANIE: 
+    // Wyśrodkowanie w poziomie (x - 15) i ustawienie płasko na ziemi
+    float targetHeight = texH * scale;
+    sprite.setPosition(x - 15.f, y + 50.f - targetHeight);
+
     shootTimer = 0.f;
-    shootInterval = 10.0f; // Strzał co 2 sekundy
+    shootInterval = 10.0f; // Strzał co 10 sekund
 }
+
 bool Turret::updateAndCheckShoot(sf::Time dt) {
     shootTimer += dt.asSeconds();
     if (shootTimer >= shootInterval) {
@@ -312,8 +326,9 @@ bool Turret::updateAndCheckShoot(sf::Time dt) {
     }
     return false;
 }
-void Turret::render(sf::RenderWindow& window) { window.draw(shape); }
-sf::FloatRect Turret::getBounds() const { return shape.getGlobalBounds(); }
+
+void Turret::render(sf::RenderWindow& window) { window.draw(sprite); }
+sf::FloatRect Turret::getBounds() const { return sprite.getGlobalBounds(); }
 
 // --- RUCHOMA PLATFORMA ---
 MovingPlatform::MovingPlatform(float x, float y) {

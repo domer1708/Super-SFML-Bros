@@ -1,6 +1,6 @@
 #include "Level.h"
 
-bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex, const sf::Texture& flagTex, const sf::Texture& iceTex, const sf::Texture& enemyTexA, const sf::Texture& enemyTexB, const sf::Texture& bossTex)
+bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex, const sf::Texture& flagTex, const sf::Texture& iceTex, const sf::Texture& enemyTexA, const sf::Texture& enemyTexB, const sf::Texture& bossTex, const sf::Texture& turretTex)
 {
     platforms.clear();
     stars.clear();
@@ -58,7 +58,7 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
             else if (tile == 'C') checkpoints.push_back(Checkpoint(x * tile_size, y * tile_size, flagTex));
             else if (tile == 'Z') vanishingPlatforms.push_back(VanishingPlatform(x * tile_size, y * tile_size));
             else if (tile == 'R') movingPlatforms.push_back(MovingPlatform(x * tile_size, y * tile_size));
-            else if (tile == 'W') turrets.push_back(Turret(x * tile_size, y * tile_size));
+            else if (tile == 'W') turrets.push_back(Turret(x * tile_size, y * tile_size, turretTex));
             else if (tile == 'I')
             {
                 sf::RectangleShape ice;
