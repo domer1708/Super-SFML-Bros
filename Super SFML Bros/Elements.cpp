@@ -135,30 +135,30 @@ Mushroom::Mushroom(float x, float y, const sf::Texture& tex)
     sprite.setScale(scaleX, scaleY);
 
     // 3. Pozycja – zachowujemy Wasze oryginalne przesunięcie na kafelku
-    sprite.setPosition(x + 10.f, y + 20.f); 
+    sprite.setPosition(x + 10.f, y + 20.f);
 }
 
 void Mushroom::render(sf::RenderWindow& window)
 {
-    if (!collected) 
+    if (!collected)
     {
         window.draw(sprite); // Rysujemy sprajta zamiast starego shape
     }
 }
 
-sf::FloatRect Mushroom::getBounds() const 
-{ 
+sf::FloatRect Mushroom::getBounds() const
+{
     return sprite.getGlobalBounds(); // Zwraca granice obrazka
 }
 
-void Mushroom::collect() 
-{ 
-    collected = true; 
+void Mushroom::collect()
+{
+    collected = true;
 }
 
-bool Mushroom::isCollected() const 
-{ 
-    return collected; 
+bool Mushroom::isCollected() const
+{
+    return collected;
 }
 
 // --- TRAMPOLINA ---

@@ -79,67 +79,53 @@ sf::FloatRect Enemy::getGlobalBounds() const
 // ==========================================
 // --- BOSS ---
 // ==========================================
-Boss::Boss(float startX, float startY) {
-    position = sf::Vector2f(startX, startY);
-    hp = 5;
-    speed = 250.f;
-    alive = true;
-    state = 0;
-    timer = 0.f;
-    shape.setFillColor(sf::Color(139, 0, 0));
-    shape.setSize(sf::Vector2f(80.f, 80.f));
-    shape.setPosition(position);
+// ==========================================
+// --- BOSS ---
+// ==========================================
+// ZMIANA: Nowy konstruktor z teksturą!
+// ==========================================
+// --- BOSS ---
+// ==========================================
+Boss::Boss(float startX, float startY, const sf::Texture& tex) : hp(100), speed(50.0f), phase(1) {
+    sprite.setTexture(tex);
+
+    // =======================================================
+    // --- POPRAWIONE SKALOWANIE DLA LEPSZEGO WYGLĄDU ---
+    // =======================================================
+    // Ustawiamy docelową wysokość na 100px (2 kafelki),
+    // a szerokość zwiększamy do 140px (prawie 3 kafelki).
+    float targetWidth = 140.f;  // ZWIĘKSZONO z 100.f
+    float targetHeight = 100.f; // Pozostawiono bez zmian
+
+    // Pobieramy oryginalny rozmiar grafiki
+    float texW = static_cast<float>(tex.getSize().x);
+    float texH = static_cast<float>(tex.getSize().y);
+
+    // Obliczamy nowe proporcje skalowania
+    sprite.setScale(targetWidth / texW, targetHeight / texH);
+
+    // Pozycjonowanie z poprzedniej poprawki (stoi NA platformie)
+    sprite.setPosition(startX, startY - 50.f);
 }
 
-void Boss::updateBoss(sf::Time dt, const std::vector<sf::RectangleShape>& platforms, sf::Vector2f playerPos) {
-    velocity.y += 1000.f * dt.asSeconds();
+void Boss::updateBoss(float deltaTime, const std::vector<sf::RectangleShape>& platforms, sf::Vector2f playerPos) {
+    if (hp <= 50 && phase == 1) {
+        phase = 2;
+        speed *= 1.5f; // Boss przyspiesza w drugiej fazie
+        sprite.setColor(sf::Color(255, 100, 100)); // Robi się lekko czerwony
+    }
 
-    float distanceToPlayer = std::abs(playerPos.x - position.x);
-    if (distanceToPlayer < 800.f) {
-        timer += dt.asSeconds();
-
-        if (state == 0) {
-            velocity.x = 0;
-            if (timer > 2.0f) {
-                state = 1;
-                timer = 0.f;
-                if (playerPos.x > position.x) velocity.x = speed;
-                else velocity.x = -speed;
-            }
-        }
-        else if (state == 1) {
-            if (timer > 1.5f) {
-                state = 0;
-                timer = 0.f;
-            }
-        }
+    // Prosty ruch: boss idzie w stronę gracza
+    if (playerPos.x < sprite.getPosition().x) {
+        sprite.move(-speed * deltaTime, 0.0f);
     }
     else {
-        velocity.x = 0.f;
-    }
-
-    position.x += velocity.x * dt.asSeconds();
-    shape.setPosition(position);
-    for (const auto& platform : platforms) {
-        if (shape.getGlobalBounds().intersects(platform.getGlobalBounds())) {
-            if (velocity.x > 0) position.x = platform.getGlobalBounds().left - shape.getGlobalBounds().width;
-            else if (velocity.x < 0) position.x = platform.getGlobalBounds().left + platform.getGlobalBounds().width;
-            velocity.x = 0.f;
-            shape.setPosition(position);
-        }
-    }
-
-    position.y += velocity.y * dt.asSeconds();
-    shape.setPosition(position);
-    for (const auto& platform : platforms) {
-        if (shape.getGlobalBounds().intersects(platform.getGlobalBounds())) {
-            if (velocity.y > 0) position.y = platform.getGlobalBounds().top - shape.getGlobalBounds().height - 0.1f;
-            else if (velocity.y < 0) position.y = platform.getGlobalBounds().top + platform.getGlobalBounds().height;
-            velocity.y = 0.f;
-            shape.setPosition(position);
-        }
+        sprite.move(speed * deltaTime, 0.0f);
     }
 }
 
-void Boss::render(sf::RenderWindow& window) { window.draw(shape); }
-sf::FloatRect Boss::getGlobalBounds() const { return shape.getGlobalBounds(); }
+void Boss::render(sf::RenderTarget& target) { target.draw(sprite); }
+void Boss::takeDamage() { hp -= 25; } // Boss pada na 4 hity
+bool Boss::isAlive() const { return hp > 0; }
+sf::FloatRect Boss::getGlobalBounds() const { return sprite.getGlobalBounds(); }
+sf::Vector2f Boss::getPosition() const { return sprite.getPosition(); }

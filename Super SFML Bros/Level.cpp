@@ -1,6 +1,6 @@
 #include "Level.h"
 
-bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex, const sf::Texture& flagTex, const sf::Texture& iceTex, const sf::Texture& enemyTexA, const sf::Texture& enemyTexB)
+bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex, const sf::Texture& flagTex, const sf::Texture& iceTex, const sf::Texture& enemyTexA, const sf::Texture& enemyTexB, const sf::Texture& bossTex)
 {
     platforms.clear();
     stars.clear();
@@ -72,7 +72,7 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
                 iceBlocks.push_back(ice);
             }
             else if (tile == 'V') elevators.push_back(Elevator(x * tile_size, y * tile_size));
-            else if (tile == 'B') bosses.push_back(Boss(x * tile_size, y * tile_size));
+            else if (tile == 'B') bosses.push_back(Boss(x * tile_size, y * tile_size, bossTex));
         }
         y++;
     }
