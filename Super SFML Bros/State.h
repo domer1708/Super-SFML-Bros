@@ -35,7 +35,10 @@ private:
     sf::RectangleShape menuFrame; // ramka
     sf::Text menu[3]; // opcje
     int selectedItemIndex; // index zaznaczonej opcji
-
+    
+    sf::Texture charTextures[3];
+    sf::Sprite charSprites[3];
+    
     bool isChoosingCharacter;
     sf::RectangleShape characterBoxes[3];
     sf::Text characterNames[3];

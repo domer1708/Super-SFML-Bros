@@ -35,31 +35,80 @@ MenuState::MenuState()
     selectedItemIndex = 0;
     isChoosingCharacter = false;
     selectedCharacterIndex = 0;
-
-    // --- MENU WYBORU POSTACI (TEŻ WYŚRODKOWANE) ---
-    float startX = 265.f;
-    for (int i = 0; i < 3; i++) {
-        characterBoxes[i].setSize(sf::Vector2f(65.f, 100.f));
-        // Opuszczone na Y=250 (wcześniej 240)
-        characterBoxes[i].setPosition(sf::Vector2f(startX + (i * 75.f), 250.f));
-    }
-    characterBoxes[0].setFillColor(sf::Color::Red);
-    characterBoxes[1].setFillColor(sf::Color::Green);
-    characterBoxes[2].setFillColor(sf::Color::Blue);
+    // --- MENU WYBORU POSTACI (TERAZ WYŚRODKOWANE I Z MARIO) ---
+    //float startX = 292.5f; // <--- ZMIENIONO z 265.f dla wyśrodkowania
 
     characterNames[0].setString("Mario");
     characterNames[1].setString("Luigi");
     characterNames[2].setString("Toad");
 
-    for (int i = 0; i < 3; i++) {
+    characterBoxes[1].setFillColor(sf::Color::Green);
+    characterBoxes[2].setFillColor(sf::Color::Blue);
+
+    // Ladowanie grafiki Mario
+    sf::Image marioImage;
+    if (marioImage.loadFromFile("pliki/mario_stand.png")) {
+        marioImage.createMaskFromColor(sf::Color(0, 255, 0)); // Zmienić na sf::Color::White jesli tło jest białe
+        charTextures[0].loadFromImage(marioImage);
+        charSprites[0].setTexture(charTextures[0]);
+    } else {
+        std::cout << "Blad ladowania mario_stand.png" << std::endl;
+        characterBoxes[0].setFillColor(sf::Color::Red);
+    }
+
+    /*for (int i = 0; i < 3; i++) {
+        characterBoxes[i].setSize(sf::Vector2f(65.f, 100.f));
+        characterBoxes[i].setPosition(sf::Vector2f(startX + (i * 75.f), 250.f));
+
+        // Ustawianie grafiki Mario na srodku hitboxa
+        if (i == 0 && charSprites[0].getTexture() != nullptr) {
+            sf::FloatRect marioBounds = charSprites[0].getGlobalBounds();
+            float scaleY = 100.f / marioBounds.height;
+            charSprites[0].setScale(scaleY, scaleY);
+            marioBounds = charSprites[0].getGlobalBounds();
+
+            float marioCenterX = characterBoxes[i].getPosition().x + (characterBoxes[i].getSize().x / 2.f);
+            float marioDrawX = marioCenterX - (marioBounds.width / 2.f);
+            charSprites[0].setPosition(sf::Vector2f(marioDrawX, 250.f + 100.f - marioBounds.height));
+        }
+
         characterNames[i].setFont(font);
         characterNames[i].setCharacterSize(14);
         characterNames[i].setFillColor(i == 0 ? sf::Color::Yellow : sf::Color::White);
         float nWidth = characterNames[i].getGlobalBounds().width;
         float boxCenter = characterBoxes[i].getPosition().x + 32.5f;
-        // Opuszczone na Y=370 (wcześniej 360)
         characterNames[i].setPosition(sf::Vector2f(boxCenter - (nWidth / 2.f), 370.f));
+    }*/
+    // --- NOWA, PEWNA PĘTLA POZYCJONOWANIA ---
+    float startX = 292.5f; // To jest idealny środek dla 3 klocków o szerokości 65px + 10px odstępu
+
+    for (int i = 0; i < 3; i++) {
+        // USTAWIAMY POZYCJĘ: startX + (numer_postaci * 75px)
+        // 75px = 65px (szerokość klocka) + 10px (odstęp)
+        float posX = startX + (i * 75.f);
+        
+        characterBoxes[i].setSize(sf::Vector2f(65.f, 100.f));
+        characterBoxes[i].setPosition(sf::Vector2f(posX, 250.f));
+
+        // Jeśli to Mario, ustawiamy jego grafikę wewnątrz tego samego posX
+        if (i == 0 && charSprites[0].getTexture() != nullptr) {
+            sf::FloatRect marioBounds = charSprites[0].getGlobalBounds();
+            float scaleY = 100.f / marioBounds.height;
+            charSprites[0].setScale(scaleY, scaleY);
+            marioBounds = charSprites[0].getGlobalBounds();
+
+            float marioDrawX = posX + (32.5f - (marioBounds.width / 2.f));
+            charSprites[0].setPosition(sf::Vector2f(marioDrawX, 250.f + 100.f - marioBounds.height));
+        }
+
+        // Napis pod spodem
+        characterNames[i].setFont(font);
+        characterNames[i].setCharacterSize(14);
+        characterNames[i].setFillColor(i == selectedCharacterIndex ? sf::Color::Yellow : sf::Color::White);
+        float nWidth = characterNames[i].getGlobalBounds().width;
+        characterNames[i].setPosition(sf::Vector2f(posX + (32.5f - (nWidth / 2.f)), 370.f));
     }
+    
 
     initStars();
 }
@@ -163,7 +212,6 @@ void MenuState::render(sf::RenderWindow& window)
 {
     window.setView(window.getDefaultView());
 
-    // 1. RYSOWANIE GWIAZD W TLE
     for (const auto& star : stars)
     {
         sf::RectangleShape starShape(sf::Vector2f(star.size, star.size));
@@ -172,7 +220,6 @@ void MenuState::render(sf::RenderWindow& window)
         window.draw(starShape);
     }
 
-    // 2. RYSOWANIE ELEMENTÓW INTERFEJSU
     window.draw(title);
     window.draw(menuFrame);
 
@@ -180,13 +227,30 @@ void MenuState::render(sf::RenderWindow& window)
     {
         for (int i = 0; i < 3; i++)
         {
-            window.draw(characterBoxes[i]);
+            // Jesli to Mario i tekstura sie zaladowala, rysuj obrazek
+            if (i == 0 && charSprites[0].getTexture() != nullptr) {
+                window.draw(charSprites[0]);
+                if (i == selectedCharacterIndex) {
+                    characterBoxes[i].setOutlineThickness(3.f);
+                    characterBoxes[i].setOutlineColor(sf::Color::Yellow);
+                    characterBoxes[i].setFillColor(sf::Color::Transparent); // ukryj wnetrze hitboxa
+                    window.draw(characterBoxes[i]);
+                }
+            } else {
+                // Dla reszty (Luigi, Toad) rysuj normalne klocki
+                if (i == selectedCharacterIndex) {
+                    characterBoxes[i].setOutlineThickness(3.f);
+                    characterBoxes[i].setOutlineColor(sf::Color::Yellow);
+                } else {
+                    characterBoxes[i].setOutlineThickness(0.f);
+                }
+                window.draw(characterBoxes[i]);
+            }
             window.draw(characterNames[i]);
         }
     }
     else
     {
-        // ZMIANA: Pętla teraz rysuje 3 elementy (i < 3), a nie 2!
         for (int i = 0; i < 3; i++)
         {
             window.draw(menu[i]);
