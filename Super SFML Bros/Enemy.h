@@ -20,6 +20,23 @@ public:
     void die() { alive = false; }
 };
 
+class BossBullet {
+private:
+    sf::Sprite sprite; // ZMIANA: Mamy teraz Sprite zamiast CircleShape
+    sf::Vector2f velocity;
+    float lifetime;
+    bool alive;
+
+public:
+    // ZMIANA: Konstruktor przyjmuje teksturę
+    BossBullet(float x, float y, sf::Vector2f targetPos, const sf::Texture& tex);
+    void update(float dt);
+    void render(sf::RenderTarget& target);
+    sf::FloatRect getBounds() const;
+    bool isAlive() const { return alive; }
+    void destroy() { alive = false; }
+};
+
 // ==========================================
 // --- BOSS ---
 // ==========================================
@@ -28,24 +45,27 @@ private:
     sf::Sprite sprite;
     int hp;
     float speed;
-    int phase; // Fazy bossa (np. 1 - normalnie, 2 - wściekły)
+    int phase;
+
+    int state;
+    float stateTimer;
+    float shootTimer;
+    std::vector<BossBullet> bullets;
+
+    const sf::Texture* bulletTexture; // NOWE: Boss trzyma wskaźnik na teksturę swoich kul
 
 public:
-    // ZMIANA: Konstruktor teraz wymaga tekstury!
-    Boss(float startX, float startY, const sf::Texture& tex);
+    // ZMIANA: Konstruktor przyjmuje drugą teksturę dla kuli
+    Boss(float startX, float startY, const sf::Texture& tex, const sf::Texture& bulletTex);
 
-    // Główne metody logiki i rysowania
-    // ZMIANA: Ujednoliciłem nazwę metody update tak, jak jej używasz w PlayState
     void updateBoss(float deltaTime, const std::vector<sf::RectangleShape>& platforms, sf::Vector2f playerPos);
     void render(sf::RenderTarget& target);
-
-    // Interakcje
-    void takeDamage(); // bez argumentu, dopasowane do Twojej logiki
+    void takeDamage();
     bool isAlive() const;
-
-    // Gettery (np. do kolizji i zapisu)
     sf::FloatRect getGlobalBounds() const;
     sf::Vector2f getPosition() const;
-    int getHp() const { return hp; } // Zwraca aktualne HP do zapisu
-    void setHp(int newHp) { hp = newHp; } // Ustawia HP przy wczytywaniu
+    int getHp() const { return hp; }
+    void setHp(int newHp) { hp = newHp; }
+    std::vector<BossBullet>& getBullets() { return bullets; }
 };
+

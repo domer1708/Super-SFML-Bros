@@ -77,55 +77,114 @@ sf::FloatRect Enemy::getGlobalBounds() const
 }
 
 // ==========================================
-// --- BOSS ---
+// --- POCISK BOSSA ---
 // ==========================================
-// ==========================================
-// --- BOSS ---
-// ==========================================
-// ZMIANA: Nowy konstruktor z teksturą!
-// ==========================================
-// --- BOSS ---
-// ==========================================
-Boss::Boss(float startX, float startY, const sf::Texture& tex) : hp(100), speed(50.0f), phase(1) {
+BossBullet::BossBullet(float x, float y, sf::Vector2f targetPos, const sf::Texture& tex) {
     sprite.setTexture(tex);
 
-    // =======================================================
-    // --- POPRAWIONE SKALOWANIE DLA LEPSZEGO WYGLĄDU ---
-    // =======================================================
-    // Ustawiamy docelową wysokość na 100px (2 kafelki),
-    // a szerokość zwiększamy do 140px (prawie 3 kafelki).
-    float targetWidth = 140.f;  // ZWIĘKSZONO z 100.f
-    float targetHeight = 100.f; // Pozostawiono bez zmian
-
-    // Pobieramy oryginalny rozmiar grafiki
+    // Skalowanie kuli (zakładamy rozmiar ok. 30x30 pikseli)
     float texW = static_cast<float>(tex.getSize().x);
     float texH = static_cast<float>(tex.getSize().y);
+    sprite.setOrigin(texW / 2.f, texH / 2.f); // Środek obrotu pocisku
 
-    // Obliczamy nowe proporcje skalowania
+    float scaleX = 30.f / texW;
+    float scaleY = 30.f / texH;
+    sprite.setScale(scaleX, scaleY);
+    sprite.setPosition(x, y);
+
+    alive = true;
+    lifetime = 4.0f;
+
+    // Trygonometria - wyliczamy wektor lotu prosto w gracza
+    sf::Vector2f direction = targetPos - sf::Vector2f(x, y);
+    float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
+    if (length != 0) direction /= length;
+
+    velocity = direction * 300.f;
+}
+
+void BossBullet::update(float dt) {
+    sprite.move(velocity * dt);
+    // Możesz tutaj dodać obrót lecącej kuli!
+    sprite.rotate(360.f * dt); // Kręci się podczas lotu
+
+    lifetime -= dt;
+    if (lifetime <= 0.f) alive = false;
+}
+
+void BossBullet::render(sf::RenderTarget& target) { if (alive) target.draw(sprite); }
+sf::FloatRect BossBullet::getBounds() const { return sprite.getGlobalBounds(); }
+
+// ==========================================
+// --- BOSS ---
+// ==========================================
+Boss::Boss(float startX, float startY, const sf::Texture& tex, const sf::Texture& bulletTex)
+    : hp(100), speed(50.0f), phase(1), state(0), stateTimer(0.f), shootTimer(0.f) {
+
+    bulletTexture = &bulletTex; // Zapisujemy adres tekstury kuli, żeby boss wiedział z czego strzelać
+    sprite.setTexture(tex);
+
+    float targetWidth = 140.f;
+    float targetHeight = 100.f;
+    float texW = static_cast<float>(tex.getSize().x);
+    float texH = static_cast<float>(tex.getSize().y);
     sprite.setScale(targetWidth / texW, targetHeight / texH);
-
-    // Pozycjonowanie z poprzedniej poprawki (stoi NA platformie)
     sprite.setPosition(startX, startY - 50.f);
 }
 
 void Boss::updateBoss(float deltaTime, const std::vector<sf::RectangleShape>& platforms, sf::Vector2f playerPos) {
     if (hp <= 50 && phase == 1) {
         phase = 2;
-        speed *= 1.5f; // Boss przyspiesza w drugiej fazie
-        sprite.setColor(sf::Color(255, 100, 100)); // Robi się lekko czerwony
+        speed *= 1.6f;
     }
 
-    // Prosty ruch: boss idzie w stronę gracza
-    if (playerPos.x < sprite.getPosition().x) {
-        sprite.move(-speed * deltaTime, 0.0f);
+    if (state == 0) {
+        if (playerPos.x < sprite.getPosition().x) sprite.move(-speed * deltaTime, 0.0f);
+        else sprite.move(speed * deltaTime, 0.0f);
+
+        if (phase == 1) sprite.setColor(sf::Color::White);
+        else sprite.setColor(sf::Color(255, 100, 100));
+
+        shootTimer += deltaTime;
+        float cooldown = (phase == 1) ? 3.5f : 2.0f;
+
+        if (shootTimer >= cooldown) {
+            state = 1;
+            stateTimer = 0.6f;
+        }
     }
-    else {
-        sprite.move(speed * deltaTime, 0.0f);
+    else if (state == 1) {
+        stateTimer -= deltaTime;
+        sprite.setColor(sf::Color(0, 255, 255)); // Miga przed strzałem
+
+        if (stateTimer <= 0.f) {
+            sf::Vector2f shootOrigin = sprite.getPosition() + sf::Vector2f(70.f, 50.f);
+
+            // ZMIANA: Przekazujemy naszą teksturę kuli do pocisku
+            bullets.push_back(BossBullet(shootOrigin.x, shootOrigin.y, playerPos, *bulletTexture));
+
+            if (phase == 2) {
+                sf::Vector2f spreadPos = playerPos;
+                spreadPos.y -= 150.f;
+                bullets.push_back(BossBullet(shootOrigin.x, shootOrigin.y, spreadPos, *bulletTexture));
+            }
+
+            shootTimer = 0.f;
+            state = 0;
+        }
     }
+
+    for (auto& b : bullets) b.update(deltaTime);
+    bullets.erase(std::remove_if(bullets.begin(), bullets.end(),
+        [](const BossBullet& b) { return !b.isAlive(); }), bullets.end());
 }
 
-void Boss::render(sf::RenderTarget& target) { target.draw(sprite); }
-void Boss::takeDamage() { hp -= 25; } // Boss pada na 4 hity
+void Boss::render(sf::RenderTarget& target) {
+    for (auto& b : bullets) b.render(target);
+    target.draw(sprite);
+}
+
+void Boss::takeDamage() { hp -= 25; }
 bool Boss::isAlive() const { return hp > 0; }
 sf::FloatRect Boss::getGlobalBounds() const { return sprite.getGlobalBounds(); }
 sf::Vector2f Boss::getPosition() const { return sprite.getPosition(); }

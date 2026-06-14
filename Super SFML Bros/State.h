@@ -35,14 +35,7 @@ private:
     sf::RectangleShape menuFrame; // ramka
     sf::Text menu[3]; // opcje
     int selectedItemIndex; // index zaznaczonej opcji
-    
-    sf::Texture charTextures[3];
-    sf::Sprite charSprites[3];
-    
-    bool isChoosingCharacter;
-    sf::RectangleShape characterBoxes[3];
-    sf::Text characterNames[3];
-    int selectedCharacterIndex;
+
     struct Star
     {
         sf::Vector2f position;
@@ -51,13 +44,13 @@ private:
     };
     std::vector<Star> stars;
     void initStars(); // funkcja pomocnicza do tworzenia gwiazd
+
 public:
     MenuState();
 
     StateAction handleEvent(sf::Event& event) override;
     StateAction update(sf::Time dt) override;
     void render(sf::RenderWindow& window) override;
-    int getSelectedCharacter() const { return selectedCharacterIndex; }
 };
 
 class PlayState : public State
@@ -68,7 +61,6 @@ private:
     Level currentLevel;
 
     int currentLevelNumber;
-    int currentCharacterIndex; // Zapamiętujemy kim gramy
     bool isGameWon;
     sf::Text gameWonText;
 
@@ -77,7 +69,7 @@ private:
     sf::Texture platformTexture;
     sf::Texture backgroundTexture;
     sf::Texture groundTexture;
-    sf::Texture doorTexture; // <--- DODANA TEKSTURA DRZWI
+    sf::Texture doorTexture;
     sf::Texture trapTexture;
     sf::Texture keyTexture;
     sf::Texture flagTexture;
@@ -86,6 +78,8 @@ private:
     sf::Texture enemyTextureB;
     sf::Texture bossTexture;
     sf::Texture turretTexture;
+    sf::Texture vanishTexture; // <--- Dodana tekstura zanikającego klocka
+    sf::Texture bossBulletTexture;
 
     sf::Sprite backgroundSprite;
 
@@ -117,8 +111,9 @@ private:
 
     void saveGame();
     bool loadGame();
+
 public:
-    PlayState(int characterIndex, bool loadFromSave = false);
+    PlayState(bool loadFromSave = false);
     StateAction handleEvent(sf::Event& event) override;
     StateAction update(sf::Time dt) override;
     void render(sf::RenderWindow& window) override;

@@ -1,6 +1,6 @@
 #include "Level.h"
 
-bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex, const sf::Texture& flagTex, const sf::Texture& iceTex, const sf::Texture& enemyTexA, const sf::Texture& enemyTexB, const sf::Texture& bossTex, const sf::Texture& turretTex)
+bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroomTex, const sf::Texture& platformTex, const sf::Texture& doorTex, const sf::Texture& trapTex, const sf::Texture& keyTex, const sf::Texture& flagTex, const sf::Texture& iceTex, const sf::Texture& enemyTexA, const sf::Texture& enemyTexB, const sf::Texture& bossTex, const sf::Texture& bossBulletTex, const sf::Texture& turretTex, const sf::Texture& vanishTex)
 {
     platforms.clear();
     stars.clear();
@@ -56,7 +56,7 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
             else if (tile == 'D') enemies.push_back(Enemy(x * tile_size, y * tile_size, enemyTexB));
             else if (tile == 'M') mushrooms.push_back(Mushroom(x * tile_size, y * tile_size, mushroomTex));
             else if (tile == 'C') checkpoints.push_back(Checkpoint(x * tile_size, y * tile_size, flagTex));
-            else if (tile == 'Z') vanishingPlatforms.push_back(VanishingPlatform(x * tile_size, y * tile_size));
+            else if (tile == 'Z') vanishingPlatforms.push_back(VanishingPlatform(x * tile_size, y * tile_size, vanishTex));
             else if (tile == 'R') movingPlatforms.push_back(MovingPlatform(x * tile_size, y * tile_size));
             else if (tile == 'W') turrets.push_back(Turret(x * tile_size, y * tile_size, turretTex));
             else if (tile == 'I')
@@ -72,7 +72,7 @@ bool Level::loadFromFile(const std::string& filename, const sf::Texture& mushroo
                 iceBlocks.push_back(ice);
             }
             else if (tile == 'V') elevators.push_back(Elevator(x * tile_size, y * tile_size));
-            else if (tile == 'B') bosses.push_back(Boss(x * tile_size, y * tile_size, bossTex));
+            else if (tile == 'B') bosses.push_back(Boss(x * tile_size, y * tile_size, bossTex, bossBulletTex));
         }
         y++;
     }

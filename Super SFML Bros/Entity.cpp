@@ -110,7 +110,7 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
     else
     {
         if (hasSuperPower) sprite.setColor(sf::Color(255, 215, 0)); // Złoty przy mocy
-        else sprite.setColor(baseColor); // Zwykły kolor (ustawiony na biały = oryginalny obrazek)
+        else sprite.setColor(baseColor);
     }
 
     float gravity = 1000.f;
@@ -132,8 +132,14 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
         if (std::abs(velocity.x) < 10.f) velocity.x = 0.f;
     }
 
+    // =========================================================================
+    // KROK 1: RUCH W POZIOMIE (X) I "RETRO HACK"
+    // =========================================================================
     position.x += velocity.x * dt.asSeconds();
-    shape.setPosition(position);
+
+    // MAGIA: Unosimy hitboxy o 2 piksele tylko na czas testowania chodzenia!
+    // Dzięki temu Mario nie potyka się o krawędzie wind i platform.
+    shape.setPosition(position.x, position.y - 2.f);
 
     for (const auto& i : platforms)
     {
@@ -142,14 +148,20 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
             if (velocity.x > 0) position.x = i.getGlobalBounds().left - shape.getGlobalBounds().width;
             else if (velocity.x < 0) position.x = i.getGlobalBounds().left + i.getGlobalBounds().width;
             velocity.x = 0.f;
-            shape.setPosition(position);
         }
     }
 
+    // Wracamy z hitboxem na właściwą wysokość
+    shape.setPosition(position.x, position.y);
+
+
+    // =========================================================================
+    // KROK 2: RUCH W PIONIE (Y) I GRAWITACJA
+    // =========================================================================
     velocity.y += gravity * dt.asSeconds();
     position.y += velocity.y * dt.asSeconds();
     shape.setPosition(position);
-    isJumping = true;
+    isJumping = true; // Zawsze zakładamy, że spadamy, dopóki nie uderzymy w ziemię
 
     for (const auto& i : platforms)
     {
@@ -158,7 +170,7 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
             if (velocity.y > 0)
             {
                 position.y = i.getGlobalBounds().top - shape.getGlobalBounds().height;
-                isJumping = false;
+                isJumping = false; // Twarde lądowanie wyłącza animację skoku
                 resetCombo();
             }
             else if (velocity.y < 0)
@@ -173,9 +185,8 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
     if (velocity.x > 1.f) isFacingRight = true;
     else if (velocity.x < -1.f) isFacingRight = false;
 
-
     // =========================================================================
-    // PROSTA ANIMACJA - ZMIANA TEKSTUR
+    // ANIMACJA
     // =========================================================================
     if (isJumping || std::abs(velocity.y) > 50.f)
     {
@@ -198,7 +209,6 @@ void Player::update(sf::Time dt, const std::vector<sf::RectangleShape>& platform
 
     // --- SKALOWANIE I OBRACANIE ---
     sf::Vector2u currentTexSize = sprite.getTexture()->getSize();
-
     if (currentTexSize.y > 0)
     {
         float scaleFactor = 60.f / static_cast<float>(currentTexSize.y);

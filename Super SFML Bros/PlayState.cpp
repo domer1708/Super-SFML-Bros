@@ -6,7 +6,7 @@
 #include <fstream>
 #include <cmath>
 
-PlayState::PlayState(int characterIndex, bool loadFromSave)
+PlayState::PlayState(bool loadFromSave)
 {
     player = std::make_unique<Player>();
     camera.setSize(800.f, 600.f);
@@ -15,7 +15,6 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     isGameWon = false;
     isPaused = false;
     currentLevelNumber = 1;
-    currentCharacterIndex = characterIndex;
 
     font.loadFromFile("pliki/PressStart2P-Regular.ttf");
 
@@ -95,28 +94,48 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
         iceTexture.loadFromImage(iceImage);
     }
 
-    // --- WCZYTYWANIE BOSSA I USUWANIE BIAŁEGO TŁA ---
     sf::Image bossImage;
     if (bossImage.loadFromFile("pliki/boss.png")) {
         bossImage.createMaskFromColor(sf::Color::White);
         bossTexture.loadFromImage(bossImage);
     }
 
-    // --- WCZYTYWANIE WIEŻYCZKI (CANOON) I USUWANIE BIAŁEGO TŁA ---
     sf::Image turretImage;
     if (turretImage.loadFromFile("pliki/canoon.png")) {
         turretImage.createMaskFromColor(sf::Color::White);
         turretTexture.loadFromImage(turretImage);
     }
 
-    // --- ZAMIANA TEKSTUR PRZECIWNIKÓW ---
+    sf::Image vanishImg;
+    if (vanishImg.loadFromFile("pliki/brick.png")) {
+        vanishImg.createMaskFromColor(sf::Color::White);
+        vanishTexture.loadFromImage(vanishImg);
+    }
+
+    // --- WCZYTYWANIE KULI BOSSA (JFIF) I CZYSZCZENIE TŁA ---
+    sf::Image kulaImg;
+    if (kulaImg.loadFromFile("pliki/kula.jfif")) {
+        sf::Color bgColor = kulaImg.getPixel(0, 0);
+        sf::Vector2u size = kulaImg.getSize();
+        for (unsigned int y = 0; y < size.y; ++y) {
+            for (unsigned int x = 0; x < size.x; ++x) {
+                sf::Color pixelColor = kulaImg.getPixel(x, y);
+                if (std::abs(pixelColor.r - bgColor.r) < 40 &&
+                    std::abs(pixelColor.g - bgColor.g) < 40 &&
+                    std::abs(pixelColor.b - bgColor.b) < 40) {
+                    kulaImg.setPixel(x, y, sf::Color(0, 0, 0, 0));
+                }
+            }
+        }
+        bossBulletTexture.loadFromImage(kulaImg);
+    }
+
     if (!enemyTextureA.loadFromFile("pliki/spike monster B.png")) {
         std::cout << "Blad ladowania pliki/spike monster B.png!" << std::endl;
     }
     if (!enemyTextureB.loadFromFile("pliki/spike monster A.png")) {
         std::cout << "Blad ladowania pliki/spike monster A.png!" << std::endl;
     }
-    // =======================================================
 
     if (stompBuffer.loadFromFile("pliki/stomp.ogg")) {
         stompSound.setBuffer(stompBuffer);
@@ -132,10 +151,6 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
     if (loadFromSave) loaded = loadGame();
 
     if (!loaded) {
-        if (characterIndex == 0) player->setColor(sf::Color::Red);
-        else if (characterIndex == 1) player->setColor(sf::Color::Green);
-        else if (characterIndex == 2) player->setColor(sf::Color::Blue);
-
         std::string platName = "pliki/ground.png";
         if (currentLevelNumber == 2) platName = "pliki/bloki2.png";
         else if (currentLevelNumber == 3) platName = "pliki/blok3.png";
@@ -147,8 +162,7 @@ PlayState::PlayState(int characterIndex, bool loadFromSave)
             platformTexture.setRepeated(true);
         }
 
-        // Dodano turretTexture na końcu wywołania loadFromFile
-        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture, enemyTextureA, enemyTextureB, bossTexture, turretTexture);
+        currentLevel.loadFromFile("pliki/level1.txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture, enemyTextureA, enemyTextureB, bossTexture, bossBulletTexture, turretTexture, vanishTexture);
         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
     }
 
@@ -171,7 +185,7 @@ void PlayState::saveGame() {
         int bossHp = 0;
         if (!currentLevel.getBosses().empty()) bossHp = currentLevel.getBosses()[0].getHp();
 
-        file << currentLevelNumber << "\n" << currentCharacterIndex << "\n"
+        file << currentLevelNumber << "\n"
             << player->getHp() << "\n" << player->getScore() << "\n"
             << player->getStarsCount() << "\n" << player->hasKey() << "\n"
             << player->hasCheckpoint() << "\n"
@@ -188,23 +202,24 @@ void PlayState::saveGame() {
 bool PlayState::loadGame() {
     std::ifstream file("pliki/zapis.txt");
     if (file.is_open()) {
-        int lvl, charIdx, hp, score, stars, bossHp;
+        int lvl, hp, score, stars, bossHp;
         bool hasKey, hasCheck;
         float cx, cy, px, py;
 
-        file >> lvl >> charIdx >> hp >> score >> stars >> hasKey >> hasCheck
+        file >> lvl >> hp >> score >> stars >> hasKey >> hasCheck
             >> cx >> cy >> px >> py >> bossHp >> totalTime >> deathCount;
         file.close();
+
         deathText.setString("ZGONY: " + std::to_string(deathCount));
-        currentLevelNumber = lvl; currentCharacterIndex = charIdx;
-        player->setHp(hp); player->setScore(score); player->setStarsCount(stars); player->setKey(hasKey);
+        currentLevelNumber = lvl;
+
+        player->setHp(hp);
+        player->setScore(score);
+        player->setStarsCount(stars);
+        player->setKey(hasKey);
 
         if (hasCheck) player->setCheckpoint(sf::Vector2f(cx, cy));
         else player->resetCheckpoint();
-
-        if (charIdx == 0) player->setColor(sf::Color::Red);
-        else if (charIdx == 1) player->setColor(sf::Color::Green);
-        else if (charIdx == 2) player->setColor(sf::Color::Blue);
 
         std::string platName = "pliki/ground.png";
         if (currentLevelNumber == 2) platName = "pliki/bloki2.png";
@@ -217,8 +232,7 @@ bool PlayState::loadGame() {
             platformTexture.setRepeated(true);
         }
 
-        // Dodano turretTexture na końcu wywołania loadFromFile
-        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture, enemyTextureA, enemyTextureB, bossTexture, turretTexture);
+        currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture, enemyTextureA, enemyTextureB, bossTexture, bossBulletTexture, turretTexture, vanishTexture);
 
         if (hasCheck) {
             for (auto& c : currentLevel.getCheckpoints()) {
@@ -280,7 +294,12 @@ StateAction PlayState::update(sf::Time dt) {
 
     std::vector<sf::RectangleShape> solidBlocks = currentLevel.getPlatforms();
     for (const auto& vp : currentLevel.getVanishingPlatforms()) {
-        if (vp.isSolid()) solidBlocks.push_back(vp.getShape());
+        if (vp.isSolid()) {
+            sf::FloatRect bounds = vp.getBounds();
+            sf::RectangleShape collisionBox(sf::Vector2f(bounds.width, bounds.height));
+            collisionBox.setPosition(bounds.left, bounds.top);
+            solidBlocks.push_back(collisionBox);
+        }
     }
     for (const auto& mp : currentLevel.getMovingPlatforms()) solidBlocks.push_back(mp.getShape());
     for (const auto& ice : currentLevel.getIceBlocks()) solidBlocks.push_back(ice);
@@ -305,7 +324,7 @@ StateAction PlayState::update(sf::Time dt) {
         sf::FloatRect mBounds = mp.getBounds();
         if (pBounds.left + pBounds.width - 4.f > mBounds.left && pBounds.left + 4.f < mBounds.left + mBounds.width) {
             if (std::abs((pBounds.top + pBounds.height) - mBounds.top) < 20.f && player->getVelocity().y >= 0.f) {
-                player->setPosition(player->getPosition().x + mp.getDeltaMovement().x, mBounds.top - pBounds.height - 0.1f);
+                player->setPosition(player->getPosition().x + mp.getDeltaMovement().x, mBounds.top - pBounds.height);
                 onMovingPlatform = true;
                 break;
             }
@@ -319,7 +338,7 @@ StateAction PlayState::update(sf::Time dt) {
             float oldElevatorTop = vBounds.top - v.getDeltaMovement().y;
             float playerFootY = pBounds.top + pBounds.height;
             if (std::abs(playerFootY - oldElevatorTop) < 30.f && player->getVelocity().y >= 0.f) {
-                player->setPosition(player->getPosition().x, vBounds.top - pBounds.height - 0.1f);
+                player->setPosition(player->getPosition().x, vBounds.top - pBounds.height);
                 onMovingPlatform = true;
                 break;
             }
@@ -384,6 +403,15 @@ StateAction PlayState::update(sf::Time dt) {
         if (!boss.isAlive()) continue;
         boss.updateBoss(dt.asSeconds(), solidBlocks, player->getPosition());
 
+        // Kolizja gracza z pociskami Bossa
+        for (auto& bullet : boss.getBullets()) {
+            if (bullet.isAlive() && player->getGlobalBounds().intersects(bullet.getBounds())) {
+                bullet.destroy();
+                player->takeDamage(1);
+            }
+        }
+
+        // Kontakt fizyczny z Bossem
         if (player->getGlobalBounds().intersects(boss.getGlobalBounds())) {
             if (player->getVelocity().y > 0 && player->getGlobalBounds().top + player->getGlobalBounds().height < boss.getGlobalBounds().top + 20.f) {
                 boss.takeDamage();
@@ -456,8 +484,7 @@ StateAction PlayState::update(sf::Time dt) {
                         platformTexture.setRepeated(true);
                     }
 
-                    // Dodano turretTexture na końcu wywołania loadFromFile
-                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture, enemyTextureA, enemyTextureB, bossTexture, turretTexture)) {
+                    if (currentLevel.loadFromFile(nextMap, mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture, enemyTextureA, enemyTextureB, bossTexture, bossBulletTexture, turretTexture, vanishTexture)) {
                         player->setPosition(currentLevel.getPlayerSpawn().x, currentLevel.getPlayerSpawn().y);
                         player->resetCheckpoint();
                         backgroundTexture.loadFromFile("pliki/tlo" + std::to_string(currentLevelNumber) + ".png");
@@ -474,8 +501,7 @@ StateAction PlayState::update(sf::Time dt) {
             player->setHp(3);
             player->resetVelocity();
 
-            // Dodano turretTexture na końcu wywołania loadFromFile
-            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture, enemyTextureA, enemyTextureB, bossTexture, turretTexture);
+            currentLevel.loadFromFile("pliki/level" + std::to_string(currentLevelNumber) + ".txt", mushroomTexture, platformTexture, doorTexture, trapTexture, keyTexture, flagTexture, iceTexture, enemyTextureA, enemyTextureB, bossTexture, bossBulletTexture, turretTexture, vanishTexture);
             player->setPosition(player->getCheckpointPos().x, player->getCheckpointPos().y);
 
             for (auto& c : currentLevel.getCheckpoints()) {

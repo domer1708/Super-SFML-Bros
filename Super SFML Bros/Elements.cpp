@@ -246,20 +246,27 @@ void Checkpoint::activate() {
 }
 
 // --- ZANIKAJĄCA PLATFORMA ---
-VanishingPlatform::VanishingPlatform(float x, float y) {
-    shape.setSize(sf::Vector2f(50.f, 50.f));
-    shape.setFillColor(sf::Color(135, 206, 235));
-    shape.setPosition(x, y);// Jasnoniebieski
+VanishingPlatform::VanishingPlatform(float x, float y, const sf::Texture& tex) {
+    sprite.setTexture(tex);
+
+    // Skalujemy do wymiarów kafelka 50x50
+    float scaleX = 50.f / tex.getSize().x;
+    float scaleY = 50.f / tex.getSize().y;
+    sprite.setScale(scaleX, scaleY);
+    sprite.setPosition(x, y);
+
     state = Normal;
     timer = 0.f;
 }
+
 void VanishingPlatform::trigger() {
     if (state == Normal) {
         state = Triggered;
-        timer = 0.6; // Zniknie po 0.6 sekundy od dotknięcia
-        shape.setFillColor(sf::Color::Red); // Miga na czerwono przed zniknięciem
+        timer = 0.6f; // Zniknie po 0.6 sekundy od dotknięcia
+        sprite.setColor(sf::Color(255, 100, 100)); // Miga na czerwono przed zniknięciem
     }
 }
+
 void VanishingPlatform::update(sf::Time dt) {
     if (state == Triggered) {
         timer -= dt.asSeconds();
@@ -272,15 +279,18 @@ void VanishingPlatform::update(sf::Time dt) {
         timer -= dt.asSeconds();
         if (timer <= 0.f) {
             state = Normal;
-            shape.setFillColor(sf::Color(135, 206, 235)); // Wraca do normy
+            sprite.setColor(sf::Color::White); // Wraca do naturalnego koloru obrazka
         }
     }
 }
-void VanishingPlatform::render(sf::RenderWindow& window) {
-    if (state != Vanished) window.draw(shape);
-}
-sf::FloatRect VanishingPlatform::getBounds() const { return shape.getGlobalBounds(); }
 
+void VanishingPlatform::render(sf::RenderWindow& window) {
+    if (state != Vanished) window.draw(sprite);
+}
+
+sf::FloatRect VanishingPlatform::getBounds() const {
+    return sprite.getGlobalBounds();
+}
 // --- POCISK ---
 Bullet::Bullet(float x, float y) {
     shape.setSize(sf::Vector2f(15.f, 10.f));

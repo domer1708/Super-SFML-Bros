@@ -107,15 +107,18 @@ public:
 // --- ZANIKAJĄCA PLATFORMA ---
 class VanishingPlatform {
 private:
-    sf::RectangleShape shape;
+    sf::Sprite sprite; // ZMIANA: Mamy teraz Sprite
     float timer;
     enum State { Normal, Triggered, Vanished } state;
+
 public:
-    VanishingPlatform(float x, float y);
+    // ZMIANA: Dodano teksturę do konstruktora
+    VanishingPlatform(float x, float y, const sf::Texture& tex);
+
     void update(sf::Time dt);
     void render(sf::RenderWindow& window);
     sf::FloatRect getBounds() const;
-    sf::RectangleShape getShape() const { return shape; }
+    sf::Sprite getShape() const { return sprite; } // ZMIANA: Zwraca Sprite
     void trigger();
     bool isSolid() const { return state != Vanished; }
 };
